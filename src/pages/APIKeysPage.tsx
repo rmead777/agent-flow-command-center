@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -13,24 +12,62 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-// Predefined list of providers
+// Enhanced providers configuration with models
 const PROVIDERS = [
-  'OpenAI',
-  'Anthropic',
-  'Google Gemini',
-  'Mistral',
-  'Cohere'
+  {
+    name: 'OpenAI',
+    models: [
+      'gpt-4o', 
+      'gpt-4.1', 
+      'gpt-4o-mini', 
+      'gpt-4.5-preview'
+    ]
+  },
+  {
+    name: 'Anthropic',
+    models: [
+      'claude-3.7-sonnet', 
+      'claude-3.7-opus', 
+      'claude-3.5-sonnet'
+    ]
+  },
+  {
+    name: 'Google Gemini',
+    models: [
+      'gemini-2.5-flash', 
+      'gemini-2.5-pro', 
+      'gemini-1.5-flash'
+    ]
+  },
+  {
+    name: 'Mistral',
+    models: [
+      'mistral-large', 
+      'mistral-medium', 
+      'mistral-small'
+    ]
+  },
+  {
+    name: 'Cohere',
+    models: [
+      'command-r', 
+      'command-r-plus', 
+      'command-light'
+    ]
+  }
 ];
 
 interface APIKey {
   id: string;
   provider: string;
+  model: string;
   created_at: string;
 }
 
 const APIKeysPage = () => {
   const [apiKeys, setAPIKeys] = useState<APIKey[]>([]);
   const [selectedProvider, setSelectedProvider] = useState<string>('');
+  const [selectedModel, setSelectedModel] = useState<string>('');
   const [apiKey, setAPIKey] = useState('');
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
@@ -73,7 +110,7 @@ const APIKeysPage = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fetch existing API keys
+  // Fetch existing API keys with model information
   const fetchAPIKeys = async () => {
     if (!userId) return;
 
@@ -81,7 +118,7 @@ const APIKeysPage = () => {
     try {
       const { data, error } = await supabase
         .from('api_keys')
-        .select('id, provider, created_at')
+        .select('id, provider, model, created_at')
         .eq('user_id', userId);
 
       if (error) throw error;
@@ -96,7 +133,7 @@ const APIKeysPage = () => {
     setLoading(false);
   };
 
-  // Add or update an API key for a provider
+  // Add API key with model support
   const handleAddAPIKey = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -108,10 +145,11 @@ const APIKeysPage = () => {
       });
       return;
     }
-    if (!selectedProvider || !apiKey.trim()) {
+
+    if (!selectedProvider || !selectedModel || !apiKey.trim()) {
       toast({
         title: "Validation Error",
-        description: "Please select a provider and enter an API key",
+        description: "Please select a provider, model, and enter an API key",
         variant: "destructive"
       });
       return;
@@ -119,22 +157,30 @@ const APIKeysPage = () => {
 
     setLoading(true);
     try {
-      // Fix: Use a single object with correct types for the upsert operation
       const { error } = await supabase
         .from('api_keys')
         .upsert(
           {
             user_id: userId,
             provider: selectedProvider,
-            api_key: apiKey
+            model: selectedModel,
+            api_key: apiKey,
+            model_config: {} // Optional model-specific configuration
           }, 
-          { onConflict: 'user_id,provider' }
+          { 
+            onConflict: 'user_id,provider,model' 
+          }
         );
 
       if (error) throw error;
 
-      toast({ title: "API Key Saved", description: `API key for ${selectedProvider} saved.` });
+      toast({ 
+        title: "API Key Saved", 
+        description: `API key for ${selectedProvider} - ${selectedModel} saved.` 
+      });
+      
       setSelectedProvider('');
+      setSelectedModel('');
       setAPIKey('');
       fetchAPIKeys();
     } catch (error: any) {
@@ -147,8 +193,8 @@ const APIKeysPage = () => {
     setLoading(false);
   };
 
-  // Delete an API key
-  const handleDeleteAPIKey = async (provider: string) => {
+  // Enhance delete to support model-specific keys
+  const handleDeleteAPIKey = async (provider: string, model: string) => {
     if (!userId) return;
 
     setLoading(true);
@@ -157,11 +203,15 @@ const APIKeysPage = () => {
         .from('api_keys')
         .delete()
         .eq('user_id', userId)
-        .eq('provider', provider);
+        .eq('provider', provider)
+        .eq('model', model);
 
       if (error) throw error;
 
-      toast({ title: "API Key Deleted", description: "API key removed." });
+      toast({ 
+        title: "API Key Deleted", 
+        description: `${provider} - ${model} API key removed.` 
+      });
       fetchAPIKeys();
     } catch (error: any) {
       toast({
@@ -173,12 +223,14 @@ const APIKeysPage = () => {
     setLoading(false);
   };
 
-  // Providers the user already has keys for
-  const existingProviders = apiKeys.map((key) => key.provider);
+  // Determine available models based on selected provider
+  const availableModels = PROVIDERS
+    .find(p => p.name === selectedProvider)?.models || [];
 
-  // Only allow adding for providers without existing keys
-  const availableProviders = PROVIDERS.filter(
-    provider => !existingProviders.includes(provider)
+  // Disable models that already have keys
+  const availableModelOptions = availableModels.filter(
+    model => !apiKeys.some(key => 
+      key.provider === selectedProvider && key.model === model)
   );
 
   if (!userId) {
@@ -205,37 +257,51 @@ const APIKeysPage = () => {
         onSubmit={handleAddAPIKey}
         className="mb-8 bg-white dark:bg-gray-900 rounded-lg p-4 shadow flex flex-col gap-2"
       >
-        {/* Provider Select (shadcn/ui version for consistent style) */}
+        {/* Provider Select */}
         <div>
           <Select
             value={selectedProvider}
-            onValueChange={setSelectedProvider}
-            disabled={loading || availableProviders.length === 0}
+            onValueChange={(value) => {
+              setSelectedProvider(value);
+              setSelectedModel(''); // Reset model when provider changes
+            }}
+            disabled={loading}
           >
-            <SelectTrigger
-              className="w-full bg-white text-black dark:bg-white dark:text-black placeholder:text-gray-400"
-              aria-label="Provider"
-            >
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Select Provider" />
             </SelectTrigger>
-            <SelectContent
-              className="bg-white text-black dark:bg-white dark:text-black z-[999]"
-              style={{ color: 'black' }}
-            >
-              {availableProviders.length === 0 && (
-                <SelectItem value="" disabled>
-                  All providers added
-                </SelectItem>
-              )}
-              {availableProviders.map(provider => (
-                <SelectItem
-                  key={provider}
-                  value={provider}
-                  className="text-black bg-white hover:bg-gray-100"
-                >
-                  {provider}
+            <SelectContent>
+              {PROVIDERS.map(provider => (
+                <SelectItem key={provider.name} value={provider.name}>
+                  {provider.name}
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Model Select (dynamically populated) */}
+        <div>
+          <Select
+            value={selectedModel}
+            onValueChange={setSelectedModel}
+            disabled={!selectedProvider || loading || availableModelOptions.length === 0}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select Model" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableModelOptions.length === 0 ? (
+                <SelectItem value="" disabled>
+                  No available models
+                </SelectItem>
+              ) : (
+                availableModelOptions.map(model => (
+                  <SelectItem key={model} value={model}>
+                    {model}
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -245,10 +311,18 @@ const APIKeysPage = () => {
           placeholder="Enter API Key"
           value={apiKey}
           onChange={(e) => setAPIKey(e.target.value)}
-          disabled={loading || !selectedProvider}
+          disabled={loading || !selectedProvider || !selectedModel}
         />
 
-        <Button type="submit" disabled={loading || !selectedProvider || !apiKey}>
+        <Button 
+          type="submit" 
+          disabled={
+            loading || 
+            !selectedProvider || 
+            !selectedModel || 
+            !apiKey
+          }
+        >
           {loading ? "Saving..." : "Add API Key"}
         </Button>
       </form>
@@ -259,12 +333,13 @@ const APIKeysPage = () => {
           <div className="text-gray-500 text-center">No API keys added yet</div>
         )}
 
-        {/* Show only the provider name and info, no actual key value */}
         {apiKeys.map((key) => (
           <Card key={key.id} className="flex justify-between items-center p-4">
             <div>
               <CardHeader className="p-0 pb-2">
-                <CardTitle className="text-lg">{key.provider}</CardTitle>
+                <CardTitle className="text-lg">
+                  {key.provider} - {key.model}
+                </CardTitle>
               </CardHeader>
               <CardContent className="p-0 text-sm text-gray-500">
                 Key added on {new Date(key.created_at).toLocaleString()}
@@ -273,7 +348,7 @@ const APIKeysPage = () => {
             <Button
               variant="destructive"
               size="sm"
-              onClick={() => handleDeleteAPIKey(key.provider)}
+              onClick={() => handleDeleteAPIKey(key.provider, key.model)}
               disabled={loading}
             >
               Delete

@@ -203,6 +203,8 @@ export type Database = {
           api_key: string
           created_at: string
           id: string
+          model: string | null
+          model_config: Json | null
           provider: string
           updated_at: string
           user_id: string
@@ -211,6 +213,8 @@ export type Database = {
           api_key: string
           created_at?: string
           id?: string
+          model?: string | null
+          model_config?: Json | null
           provider: string
           updated_at?: string
           user_id: string
@@ -219,6 +223,8 @@ export type Database = {
           api_key?: string
           created_at?: string
           id?: string
+          model?: string | null
+          model_config?: Json | null
           provider?: string
           updated_at?: string
           user_id?: string
