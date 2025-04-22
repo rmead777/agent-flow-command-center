@@ -14,6 +14,18 @@ interface Note {
   updated_at: string;
 }
 
+// Type guard to check if data from Supabase matches our Note interface
+function isNote(item: any): item is Note {
+  return (
+    typeof item === 'object' &&
+    item !== null &&
+    'id' in item &&
+    'title' in item &&
+    'content' in item &&
+    'created_at' in item
+  );
+}
+
 const NotesPage = () => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [title, setTitle] = useState("");
@@ -22,14 +34,21 @@ const NotesPage = () => {
 
   const fetchNotes = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("notes")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (error) {
+    try {
+      const { data, error } = await supabase
+        .from("notes")
+        .select("*")
+        .order("created_at", { ascending: false }) as { data: any[], error: any };
+        
+      if (error) {
+        toast({ title: "Error loading notes", description: error.message, variant: "destructive" });
+      } else if (Array.isArray(data)) {
+        // Validate that each item in data conforms to our Note interface
+        const validNotes = data.filter(isNote);
+        setNotes(validNotes);
+      }
+    } catch (error: any) {
       toast({ title: "Error loading notes", description: error.message, variant: "destructive" });
-    } else {
-      setNotes(data as Note[]);
     }
     setLoading(false);
   };
@@ -45,18 +64,23 @@ const NotesPage = () => {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.from("notes").insert([
-      { title, content }
-    ]);
-    setLoading(false);
-    if (error) {
+    try {
+      const { error } = await supabase.from("notes").insert([
+        { title, content }
+      ] as any); // Using 'as any' to bypass type checking for the insert
+      
+      if (error) {
+        toast({ title: "Error adding note", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Note added" });
+        setTitle("");
+        setContent("");
+        fetchNotes();
+      }
+    } catch (error: any) {
       toast({ title: "Error adding note", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Note added" });
-      setTitle("");
-      setContent("");
-      fetchNotes();
     }
+    setLoading(false);
   };
 
   return (
