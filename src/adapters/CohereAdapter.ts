@@ -1,22 +1,20 @@
 
 import { ModelAdapter } from "./ModelAdapter";
 
-export class OpenAIAdapter implements ModelAdapter {
+export class CohereAdapter implements ModelAdapter {
   modelName: string;
-  providerName = "OpenAI";
-  supportedFeatures = ["text", "images"];
+  providerName = "Cohere";
+  supportedFeatures = ["text"];
 
-  constructor(modelName = "gpt-4o") {
+  constructor(modelName = "command-r-plus") {
     this.modelName = modelName;
   }
 
   buildRequest(input: string, config: any) {
     return {
       model: this.modelName,
-      messages: [
-        { role: "system", content: config.systemPrompt || "You are helpful." },
-        { role: "user", content: input }
-      ],
+      message: input,
+      preamble: config.systemPrompt || "You are a helpful AI assistant.",
       temperature: config.temperature ?? 0.7,
       max_tokens: config.maxTokens ?? 512,
     };
@@ -24,8 +22,8 @@ export class OpenAIAdapter implements ModelAdapter {
 
   parseResponse(response: any) {
     return {
-      output: response.choices?.[0]?.message?.content || "",
-      usage: response.usage || {},
+      output: response.generations?.[0]?.text || "",
+      usage: response.meta?.usage || {},
       raw: response
     };
   }
@@ -42,7 +40,7 @@ export class OpenAIAdapter implements ModelAdapter {
     return {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: "You are a helpful assistant."
+      systemPrompt: "You are a helpful AI assistant."
     };
   }
 }

@@ -1,31 +1,35 @@
 
 import { ModelAdapter } from "./ModelAdapter";
 
-export class OpenAIAdapter implements ModelAdapter {
+export class GoogleAdapter implements ModelAdapter {
   modelName: string;
-  providerName = "OpenAI";
+  providerName = "Google Gemini";
   supportedFeatures = ["text", "images"];
 
-  constructor(modelName = "gpt-4o") {
+  constructor(modelName = "gemini-2.5-pro") {
     this.modelName = modelName;
   }
 
   buildRequest(input: string, config: any) {
     return {
       model: this.modelName,
-      messages: [
-        { role: "system", content: config.systemPrompt || "You are helpful." },
-        { role: "user", content: input }
+      contents: [
+        { role: "user", parts: [{ text: input }] }
       ],
-      temperature: config.temperature ?? 0.7,
-      max_tokens: config.maxTokens ?? 512,
+      systemInstruction: {
+        parts: [{ text: config.systemPrompt || "You are a helpful AI assistant." }]
+      },
+      generationConfig: {
+        temperature: config.temperature ?? 0.7,
+        maxOutputTokens: config.maxTokens ?? 512,
+      }
     };
   }
 
   parseResponse(response: any) {
     return {
-      output: response.choices?.[0]?.message?.content || "",
-      usage: response.usage || {},
+      output: response.candidates?.[0]?.content?.parts?.[0]?.text || "",
+      usage: response.usageMetadata || {},
       raw: response
     };
   }
@@ -42,7 +46,7 @@ export class OpenAIAdapter implements ModelAdapter {
     return {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: "You are a helpful assistant."
+      systemPrompt: "You are Gemini, a helpful AI assistant."
     };
   }
 }

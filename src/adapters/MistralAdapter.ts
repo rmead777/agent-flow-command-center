@@ -1,12 +1,12 @@
 
 import { ModelAdapter } from "./ModelAdapter";
 
-export class OpenAIAdapter implements ModelAdapter {
+export class MistralAdapter implements ModelAdapter {
   modelName: string;
-  providerName = "OpenAI";
-  supportedFeatures = ["text", "images"];
+  providerName = "Mistral";
+  supportedFeatures = ["text"];
 
-  constructor(modelName = "gpt-4o") {
+  constructor(modelName = "mistral-large") {
     this.modelName = modelName;
   }
 
@@ -14,7 +14,7 @@ export class OpenAIAdapter implements ModelAdapter {
     return {
       model: this.modelName,
       messages: [
-        { role: "system", content: config.systemPrompt || "You are helpful." },
+        { role: "system", content: config.systemPrompt || "You are a helpful AI assistant." },
         { role: "user", content: input }
       ],
       temperature: config.temperature ?? 0.7,
@@ -42,7 +42,7 @@ export class OpenAIAdapter implements ModelAdapter {
     return {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: "You are a helpful assistant."
+      systemPrompt: "You are a helpful AI assistant."
     };
   }
 }

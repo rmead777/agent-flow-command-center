@@ -1,12 +1,12 @@
 
 import { ModelAdapter } from "./ModelAdapter";
 
-export class OpenAIAdapter implements ModelAdapter {
+export class AnthropicAdapter implements ModelAdapter {
   modelName: string;
-  providerName = "OpenAI";
-  supportedFeatures = ["text", "images"];
+  providerName = "Anthropic";
+  supportedFeatures = ["text"];
 
-  constructor(modelName = "gpt-4o") {
+  constructor(modelName = "claude-3.7-sonnet") {
     this.modelName = modelName;
   }
 
@@ -14,7 +14,7 @@ export class OpenAIAdapter implements ModelAdapter {
     return {
       model: this.modelName,
       messages: [
-        { role: "system", content: config.systemPrompt || "You are helpful." },
+        { role: "system", content: config.systemPrompt || "You are Claude, a helpful AI assistant." },
         { role: "user", content: input }
       ],
       temperature: config.temperature ?? 0.7,
@@ -24,7 +24,7 @@ export class OpenAIAdapter implements ModelAdapter {
 
   parseResponse(response: any) {
     return {
-      output: response.choices?.[0]?.message?.content || "",
+      output: response.content?.[0]?.text || "",
       usage: response.usage || {},
       raw: response
     };
@@ -42,7 +42,7 @@ export class OpenAIAdapter implements ModelAdapter {
     return {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: "You are a helpful assistant."
+      systemPrompt: "You are Claude, a helpful AI assistant."
     };
   }
 }

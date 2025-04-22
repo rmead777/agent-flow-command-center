@@ -3,6 +3,13 @@ export interface FlowNode {
   id: string;
   type: "input" | "model" | "action" | "output";
   modelId?: string;
-  config?: object;
+  config?: {
+    systemPrompt?: string;
+    temperature?: number;
+    maxTokens?: number;
+    streamResponse?: boolean;
+    retryOnError?: boolean;
+    [key: string]: any;
+  };
   inputNodeIds?: string[];
 }
