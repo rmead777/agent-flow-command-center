@@ -16,16 +16,38 @@ import { Switch } from '@/components/ui/switch';
 import { PROVIDERS } from '@/pages/api-keys/apiKeyProviders';
 import { getAdapter, getModelsByProvider } from '@/adapters/adapterRegistry';
 import { useState, useEffect } from 'react';
-import { Node as FlowNode } from '@xyflow/react';
+import { Node as ReactFlowNode } from '@xyflow/react';
+import { FlowNode as FlowNodeType } from '@/flow/types';
+
+// Define a proper type for the node data
+interface AgentNodeData {
+  label: string;
+  type: string;
+  status?: 'active' | 'idle' | 'error';
+  metrics?: {
+    tasksProcessed: number;
+    latency: number;
+    errorRate: number;
+  };
+  modelId?: string;
+  config?: {
+    systemPrompt?: string;
+    temperature?: number;
+    maxTokens?: number;
+    streamResponse?: boolean;
+    retryOnError?: boolean;
+    [key: string]: any;
+  };
+}
 
 interface ConfigurationPanelProps {
-  node: FlowNode;
-  onNodeChange: (updater: (prev: FlowNode) => FlowNode) => void;
+  node: ReactFlowNode<AgentNodeData>;
+  onNodeChange: (updater: (prev: ReactFlowNode<AgentNodeData>) => ReactFlowNode<AgentNodeData>) => void;
   onClose: () => void;
 }
 
 export function ConfigurationPanel({ node, onNodeChange, onClose }: ConfigurationPanelProps) {
-  const data = node.data || {};
+  const data = node.data || {} as AgentNodeData;
 
   // Helper: Get full models by provider mapping
   const modelsByProvider = getModelsByProvider();
@@ -38,12 +60,12 @@ export function ConfigurationPanel({ node, onNodeChange, onClose }: Configuratio
   const availableModels = selectedProvider ? modelsByProvider[selectedProvider] || [] : [];
 
   // System Prompt, Temperature slider are controlled directly and update node immediately
-  const systemPrompt = data?.config?.systemPrompt || "";
-  const temperature = data?.config?.temperature ?? 0.7;
-  const streamResponse = data?.config?.streamResponse ?? true;
-  const retryOnError = data?.config?.retryOnError ?? true;
-  const agentName = data?.label || "";
-  const agentType = data?.type || "";
+  const systemPrompt = data.config?.systemPrompt || "";
+  const temperature = data.config?.temperature ?? 0.7;
+  const streamResponse = data.config?.streamResponse ?? true;
+  const retryOnError = data.config?.retryOnError ?? true;
+  const agentName = data.label || "";
+  const agentType = data.type || "";
 
   // Immediate node-updating handlers for all fields
 

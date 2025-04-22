@@ -11,7 +11,7 @@ import {
   Connection,
   Edge,
   Panel,
-  Node as FlowNode,
+  Node as ReactFlowNode,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { AgentNode } from '@/components/flow/AgentNode';
@@ -35,13 +35,13 @@ export function FlowView() {
     [setEdges]
   );
 
-  const onNodeClick = (_: React.MouseEvent, node: FlowNode) => {
+  const onNodeClick = (_: React.MouseEvent, node: ReactFlowNode) => {
     setSelectedNode(node.id);
   };
 
   const selectedNodeData = selectedNode ? nodes.find(n => n.id === selectedNode) : null;
 
-  const updateNodeData = (nodeId: string, updater: (prev: FlowNode) => FlowNode) => {
+  const updateNodeData = (nodeId: string, updater: (prev: ReactFlowNode) => ReactFlowNode) => {
     setNodes((ns) => ns.map(n => (n.id === nodeId ? updater(n) : n)));
   };
 
