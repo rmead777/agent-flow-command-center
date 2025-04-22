@@ -8,8 +8,9 @@ import { AgentMetricsView } from "@/components/dashboard/AgentMetricsView";
 import { LogsView } from "@/components/dashboard/LogsView";
 import { NotificationBar } from "@/components/dashboard/NotificationBar";
 import APIKeysPage from "@/pages/APIKeysPage";
+import ModelSystemValidator from "@/components/admin/ModelSystemValidator";
 
-type View = "flow" | "metrics" | "logs" | "api-keys";
+type View = "flow" | "metrics" | "logs" | "api-keys" | "system-validator";
 
 const Dashboard = () => {
   const [currentView, setCurrentView] = useState<View>("flow");
@@ -38,7 +39,7 @@ const Dashboard = () => {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background text-foreground">
-        <DashboardSidebar currentView={currentView} setCurrentView={setCurrentView} />
+        <DashboardSidebar currentView={currentView} setCurrentView={setCurrentView as any} />
         <div className="flex flex-1 flex-col">
           <NotificationBar notifications={notifications} />
           <DashboardHeader />
@@ -47,6 +48,12 @@ const Dashboard = () => {
             {currentView === "metrics" && <AgentMetricsView />}
             {currentView === "logs" && <LogsView />}
             {currentView === "api-keys" && <APIKeysPage />}
+            {currentView === "system-validator" && (
+              <div className="max-w-4xl mx-auto">
+                <h1 className="text-2xl font-bold mb-6">System Validation</h1>
+                <ModelSystemValidator />
+              </div>
+            )}
           </main>
         </div>
       </div>

@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -16,6 +16,8 @@ import '@xyflow/react/dist/style.css';
 import { AgentNode } from '@/components/flow/AgentNode';
 import { ConfigurationPanel } from '@/components/flow/ConfigurationPanel';
 import { initialNodes, initialEdges } from '@/data/flowData';
+import { validateBeforeExecution } from '@/utils/modelValidation';
+import { toast } from '@/components/ui/use-toast';
 
 // Add modelId and config properties to initialNodes
 const nodeTypes = {
@@ -26,6 +28,7 @@ export function FlowView() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  const [isValidated, setIsValidated] = useState(false);
   
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -34,6 +37,34 @@ export function FlowView() {
 
   const onNodeClick = (_: React.MouseEvent, node: any) => {
     setSelectedNode(node.id);
+  };
+
+  // Validate flow on initial load and when nodes change
+  useEffect(() => {
+    const isValid = validateBeforeExecution(nodes);
+    setIsValidated(isValid);
+  }, [nodes]);
+
+  const handleExecuteFlow = () => {
+    if (!isValidated) {
+      const isValid = validateBeforeExecution(nodes);
+      setIsValidated(isValid);
+      
+      if (!isValid) {
+        toast({
+          title: "Validation Failed",
+          description: "Please fix validation errors before executing flow",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+    
+    // We could implement actual flow execution here
+    toast({
+      title: "Flow Execution",
+      description: "Flow validated successfully and ready for execution",
+    });
   };
 
   return (
@@ -77,6 +108,12 @@ export function FlowView() {
                 </button>
                 <button className="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 text-xs rounded">
                   Auto Layout
+                </button>
+                <button 
+                  className={`${isValidated ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600'} text-white px-2 py-1 text-xs rounded`}
+                  onClick={handleExecuteFlow}
+                >
+                  Execute Flow
                 </button>
               </div>
             </Panel>

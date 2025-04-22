@@ -2,6 +2,7 @@
 import { FlowNode } from "./types";
 import { getAdapter } from "../adapters/adapterRegistry";
 import { toast } from "@/components/ui/use-toast";
+import { validateFlowNodeConfig } from "../utils/modelValidation";
 
 /**
  * Calls the appropriate adapter for a given node.
@@ -19,9 +20,16 @@ export async function executeNode(node: FlowNode, input: any): Promise<any> {
   // Use default config if none provided
   const config = node.config ?? adapter.getDefaultConfig();
   
-  // Validate config
-  if (!adapter.validateConfig(config)) {
-    throw new Error("Invalid configuration for model");
+  // Validate config using the validation utility
+  const validation = validateFlowNodeConfig(node.modelId, config);
+  if (!validation.isValid) {
+    const errorMessage = `Invalid configuration: ${validation.errors.join(', ')}`;
+    toast({
+      title: "Configuration Error",
+      description: errorMessage,
+      variant: "destructive"
+    });
+    throw new Error(errorMessage);
   }
   
   try {
