@@ -5,6 +5,8 @@ import { AnthropicAdapter } from "./AnthropicAdapter";
 import { GoogleAdapter } from "./GoogleAdapter";
 import { MistralAdapter } from "./MistralAdapter";
 import { CohereAdapter } from "./CohereAdapter";
+import { XAIAdapter } from "./XAIAdapter";
+import { DeepSeekAdapter } from "./DeepSeekAdapter";
 
 // Register all provider models
 export const adapterRegistry: Record<string, ModelAdapter> = {
@@ -13,7 +15,11 @@ export const adapterRegistry: Record<string, ModelAdapter> = {
   "gpt-4.1": new OpenAIAdapter("gpt-4.1"),
   "gpt-4o-mini": new OpenAIAdapter("gpt-4o-mini"),
   "gpt-4.5-preview": new OpenAIAdapter("gpt-4.5-preview"),
-  
+  // NEW OpenAI MODELS
+  "o3": new OpenAIAdapter("o3"),
+  "o3-mini": new OpenAIAdapter("o3-mini"),
+  "o4-mini": new OpenAIAdapter("o4-mini"),
+
   // Anthropic Models
   "claude-3.7-sonnet": new AnthropicAdapter("claude-3.7-sonnet"),
   "claude-3.7-opus": new AnthropicAdapter("claude-3.7-opus"),
@@ -32,7 +38,15 @@ export const adapterRegistry: Record<string, ModelAdapter> = {
   // Cohere Models
   "command-r": new CohereAdapter("command-r"),
   "command-r-plus": new CohereAdapter("command-r-plus"),
-  "command-light": new CohereAdapter("command-light")
+  "command-light": new CohereAdapter("command-light"),
+
+  // XAI Models
+  "Grok-3-beta": new XAIAdapter("Grok-3-beta"),
+  "Grok-3-mini-beta": new XAIAdapter("Grok-3-mini-beta"),
+
+  // DeepSeek Models
+  "DeepSeek-R1": new DeepSeekAdapter("DeepSeek-R1"),
+  "DeepSeek-V3-0324": new DeepSeekAdapter("DeepSeek-V3-0324"),
 };
 
 // Utility function to get all available models by provider

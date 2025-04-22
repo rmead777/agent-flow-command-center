@@ -6,7 +6,11 @@ export const PROVIDERS = [
       'gpt-4o', 
       'gpt-4.1', 
       'gpt-4o-mini', 
-      'gpt-4.5-preview'
+      'gpt-4.5-preview',
+      // ADDED below:
+      'o3', 
+      'o3-mini', 
+      'o4-mini',
     ]
   },
   {
@@ -40,5 +44,19 @@ export const PROVIDERS = [
       'command-r-plus', 
       'command-light'
     ]
-  }
+  },
+  {
+    name: 'XAI',
+    models: [
+      'Grok-3-beta',
+      'Grok-3-mini-beta'
+    ]
+  },
+  {
+    name: 'DeepSeek',
+    models: [
+      'DeepSeek-R1',
+      'DeepSeek-V3-0324'
+    ]
+  },
 ];
