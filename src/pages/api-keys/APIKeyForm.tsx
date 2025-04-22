@@ -97,7 +97,7 @@ const APIKeyForm: React.FC<Props> = ({ loading, apiKeys, onSubmit }) => {
           </SelectTrigger>
           <SelectContent>
             {availableModelOptions.length === 0 ? (
-              <SelectItem value="" disabled>
+              <SelectItem value="no-models-available" disabled>
                 No available models
               </SelectItem>
             ) : (
