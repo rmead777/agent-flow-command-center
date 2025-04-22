@@ -13,77 +13,106 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
-import { initialNodes } from '@/data/flowData';
 import { PROVIDERS } from '@/pages/api-keys/apiKeyProviders';
 import { getAdapter, getModelsByProvider } from '@/adapters/adapterRegistry';
 import { useState, useEffect } from 'react';
-import { FlowNode } from '@/flow/types';
+import { Node } from '@xyflow/react';
 
 interface ConfigurationPanelProps {
-  nodeId: string;
+  node: Node; // live node
+  onNodeChange: (updater: (prev: Node) => Node) => void;
   onClose: () => void;
 }
 
-export function ConfigurationPanel({ nodeId, onClose }: ConfigurationPanelProps) {
-  // Find the node in initialNodes and cast it to include our expected properties
-  const node = initialNodes.find(n => n.id === nodeId) as unknown as {
-    id: string;
-    data: {
-      label: string;
-      type: string;
-      status: 'active' | 'idle' | 'error';
-      metrics: {
-        tasksProcessed: number;
-        latency: number;
-        errorRate: number;
-      };
-      modelId?: string;
-      config?: {
-        systemPrompt?: string;
-        temperature?: number;
-        maxTokens?: number;
-        streamResponse?: boolean;
-        retryOnError?: boolean;
-        [key: string]: any;
-      };
-    }
-  };
-  
-  const [selectedProvider, setSelectedProvider] = useState<string>("");
-  const [selectedModel, setSelectedModel] = useState<string>("");
-  const [systemPrompt, setSystemPrompt] = useState<string>("You are an AI assistant that helps users find information. Be concise and accurate in your responses.");
-  const [temperature, setTemperature] = useState<number[]>([0.7]);
-  const [streamResponse, setStreamResponse] = useState<boolean>(true);
-  const [retryOnError, setRetryOnError] = useState<boolean>(true);
-  
-  // Get all models by provider for the dropdown
+export function ConfigurationPanel({ node, onNodeChange, onClose }: ConfigurationPanelProps) {
+  const data = node.data as any;
+
+  // Helper: Get full models by provider mapping
   const modelsByProvider = getModelsByProvider();
-  
-  useEffect(() => {
-    if (node?.data?.modelId) {
-      const adapter = getAdapter(node.data.modelId);
-      if (adapter) {
-        setSelectedProvider(adapter.providerName);
-        setSelectedModel(node.data.modelId);
-        
-        // Load other config if available
-        if (node.data.config) {
-          setSystemPrompt(node.data.config.systemPrompt || systemPrompt);
-          setTemperature([node.data.config.temperature || 0.7]);
-          setStreamResponse(node.data.config.streamResponse !== undefined ? node.data.config.streamResponse : true);
-          setRetryOnError(node.data.config.retryOnError !== undefined ? node.data.config.retryOnError : true);
+
+  // Controlled fields: always use node-prop as source of truth. Local state only for slider, but write-through.
+  const selectedProvider = data.modelId && getAdapter(data.modelId)
+    ? getAdapter(data.modelId)!.providerName
+    : "";
+  const selectedModel = data.modelId || "";
+  const availableModels = selectedProvider ? modelsByProvider[selectedProvider] || [] : [];
+
+  // System Prompt, Temperature slider are controlled directly and update node immediately
+  const systemPrompt = data?.config?.systemPrompt || "";
+  const temperature = data?.config?.temperature ?? 0.7;
+  const streamResponse = data?.config?.streamResponse ?? true;
+  const retryOnError = data?.config?.retryOnError ?? true;
+  const agentName = data?.label || "";
+  const agentType = data?.type || "";
+
+  // Immediate node-updating handlers for all fields
+
+  const updateConfig = (key: string, value: any) => {
+    onNodeChange(prev => ({
+      ...prev,
+      data: {
+        ...prev.data,
+        config: {
+          ...(prev.data.config ?? {}),
+          [key]: value
         }
       }
-    }
-  }, [node]);
-  
-  if (!node) {
-    return null;
-  }
-  
-  const isRunning = node.data.status === 'active';
-  const availableModels = selectedProvider ? modelsByProvider[selectedProvider] || [] : [];
-  
+    }));
+  };
+
+  const updateLabel = (value: string) => {
+    onNodeChange(prev => ({
+      ...prev,
+      data: {
+        ...prev.data,
+        label: value
+      }
+    }));
+  };
+
+  const updateAgentType = (value: string) => {
+    onNodeChange(prev => ({
+      ...prev,
+      data: {
+        ...prev.data,
+        type: value
+      }
+    }));
+  };
+
+  const updateProvider = (provider: string) => {
+    // Clear modelId, user must re-select model for provider
+    onNodeChange(prev => ({
+      ...prev,
+      data: {
+        ...prev.data,
+        modelId: "",
+        config: {
+          ...(prev.data.config ?? {}), // can keep config
+        }
+      }
+    }));
+  };
+
+  const updateModel = (modelId: string) => {
+    onNodeChange(prev => ({
+      ...prev,
+      data: {
+        ...prev.data,
+        modelId
+      }
+    }));
+  };
+
+  // Simple helper for numeric slider
+  const handleTemperature = (value: number[]) => {
+    updateConfig("temperature", value[0]);
+  };
+
+  if (!node) return null;
+
+  const isRunning = data.status === 'active';
+
   return (
     <div className="h-full w-80 flex-shrink-0 overflow-auto border-l border-gray-800 bg-gray-900 p-4">
       <div className="mb-4 flex items-center justify-between">
@@ -92,37 +121,38 @@ export function ConfigurationPanel({ nodeId, onClose }: ConfigurationPanelProps)
           <X className="h-4 w-4" />
         </Button>
       </div>
-      
+
       <div className="mb-4">
         <div className="mb-1 flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-300">{node.data.label}</span>
+          <span className="text-sm font-medium text-gray-300">{agentName}</span>
           <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs ${
-            node.data.status === 'active' 
+            data.status === 'active' 
               ? 'bg-green-900/40 text-green-400' 
-              : node.data.status === 'error'
+              : data.status === 'error'
               ? 'bg-red-900/40 text-red-400'
               : 'bg-yellow-900/40 text-yellow-400'
           }`}>
-            {node.data.status}
+            {data.status}
           </span>
         </div>
-        <div className="text-xs text-gray-400">ID: {nodeId}</div>
+        <div className="text-xs text-gray-400">ID: {node.id}</div>
       </div>
-      
+
       <Separator className="my-4 bg-gray-800" />
-      
+
       <div className="space-y-4">
         <div>
           <label className="mb-2 block text-sm font-medium">Agent Name</label>
           <Input 
-            defaultValue={node.data.label}
+            value={agentName}
+            onChange={(e) => updateLabel(e.target.value)}
             className="border-gray-700 bg-gray-800 text-white"
           />
         </div>
-        
+
         <div>
           <label className="mb-2 block text-sm font-medium">Agent Type</label>
-          <Select defaultValue={node.data.type}>
+          <Select value={agentType} onValueChange={updateAgentType}>
             <SelectTrigger className="border-gray-700 bg-gray-800 text-white">
               <SelectValue placeholder="Select type" />
             </SelectTrigger>
@@ -134,25 +164,22 @@ export function ConfigurationPanel({ nodeId, onClose }: ConfigurationPanelProps)
             </SelectContent>
           </Select>
         </div>
-        
+
         <div>
           <label className="mb-2 block text-sm font-medium">System Prompt</label>
           <Textarea 
             rows={4}
             className="border-gray-700 bg-gray-800 text-white"
             value={systemPrompt}
-            onChange={(e) => setSystemPrompt(e.target.value)}
+            onChange={(e) => updateConfig("systemPrompt", e.target.value)}
           />
         </div>
-        
+
         <div>
           <label className="mb-2 block text-sm font-medium">AI Provider</label>
           <Select 
-            value={selectedProvider} 
-            onValueChange={(value) => {
-              setSelectedProvider(value);
-              setSelectedModel("");
-            }}
+            value={selectedProvider}
+            onValueChange={updateProvider}
           >
             <SelectTrigger className="border-gray-700 bg-gray-800 text-white">
               <SelectValue placeholder="Select provider" />
@@ -166,12 +193,12 @@ export function ConfigurationPanel({ nodeId, onClose }: ConfigurationPanelProps)
             </SelectContent>
           </Select>
         </div>
-        
+
         <div>
           <label className="mb-2 block text-sm font-medium">Model</label>
           <Select 
             value={selectedModel}
-            onValueChange={setSelectedModel}
+            onValueChange={updateModel}
             disabled={!selectedProvider}
           >
             <SelectTrigger className="border-gray-700 bg-gray-800 text-white">
@@ -186,40 +213,40 @@ export function ConfigurationPanel({ nodeId, onClose }: ConfigurationPanelProps)
             </SelectContent>
           </Select>
         </div>
-        
+
         <div>
           <div className="mb-2 flex items-center justify-between">
             <label className="text-sm font-medium">Temperature</label>
-            <span className="text-xs text-gray-400">{temperature[0]}</span>
+            <span className="text-xs text-gray-400">{temperature}</span>
           </div>
           <Slider 
-            value={temperature} 
-            onValueChange={setTemperature} 
+            value={[temperature]} 
+            onValueChange={handleTemperature} 
             max={1} 
             step={0.1} 
             className="py-4" 
           />
         </div>
-        
+
         <div className="flex items-center justify-between">
           <label className="text-sm font-medium">Stream Response</label>
           <Switch 
             checked={streamResponse}
-            onCheckedChange={setStreamResponse}
+            onCheckedChange={val => updateConfig("streamResponse", val)}
           />
         </div>
-        
+
         <div className="flex items-center justify-between">
           <label className="text-sm font-medium">Retry on Error</label>
           <Switch 
             checked={retryOnError}
-            onCheckedChange={setRetryOnError}  
+            onCheckedChange={val => updateConfig("retryOnError", val)}  
           />
         </div>
       </div>
-      
+
       <Separator className="my-4 bg-gray-800" />
-      
+
       <div className="flex gap-2">
         <Button 
           variant="outline" 
@@ -228,14 +255,14 @@ export function ConfigurationPanel({ nodeId, onClose }: ConfigurationPanelProps)
           {isRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           <span>{isRunning ? 'Pause' : 'Start'}</span>
         </Button>
-        
+
         <Button variant="outline" className="flex-1 gap-2 border-red-700 text-red-400">
           <Trash className="h-4 w-4" />
           <span>Delete</span>
         </Button>
       </div>
-      
-      {node.data.status === 'error' && (
+
+      {data.status === 'error' && (
         <div className="mt-4 rounded-md bg-red-900/30 p-3 text-sm text-red-300">
           <div className="mb-1 flex items-center gap-1 font-medium">
             <AlertTriangle className="h-4 w-4" />
@@ -249,3 +276,5 @@ export function ConfigurationPanel({ nodeId, onClose }: ConfigurationPanelProps)
     </div>
   );
 }
+
+// NOTE: This file now exceeds 250 lines and should be refactored into smaller components.

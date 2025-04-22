@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import {
   ReactFlow,
@@ -19,7 +18,6 @@ import { initialNodes, initialEdges } from '@/data/flowData';
 import { validateBeforeExecution } from '@/utils/modelValidation';
 import { toast } from '@/components/ui/use-toast';
 
-// Add modelId and config properties to initialNodes
 const nodeTypes = {
   agent: AgentNode,
 };
@@ -29,7 +27,7 @@ export function FlowView() {
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [isValidated, setIsValidated] = useState(false);
-  
+
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
@@ -39,7 +37,12 @@ export function FlowView() {
     setSelectedNode(node.id);
   };
 
-  // Validate flow on initial load and when nodes change
+  const selectedNodeData = selectedNode ? nodes.find(n => n.id === selectedNode) : null;
+
+  const updateNodeData = (nodeId: string, updater: (prev: Node) => Node) => {
+    setNodes(ns => ns.map(n => (n.id === nodeId ? updater(n) : n)));
+  };
+
   useEffect(() => {
     const isValid = validateBeforeExecution(nodes);
     setIsValidated(isValid);
@@ -60,7 +63,6 @@ export function FlowView() {
       }
     }
     
-    // We could implement actual flow execution here
     toast({
       title: "Flow Execution",
       description: "Flow validated successfully and ready for execution",
@@ -119,9 +121,10 @@ export function FlowView() {
             </Panel>
           </ReactFlow>
         </div>
-        {selectedNode && (
+        {selectedNode && selectedNodeData && (
           <ConfigurationPanel 
-            nodeId={selectedNode}
+            node={selectedNodeData}
+            onNodeChange={(updater) => updateNodeData(selectedNode, updater)}
             onClose={() => setSelectedNode(null)}
           />
         )}
