@@ -35,10 +35,11 @@ const NotesPage = () => {
   const fetchNotes = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Use type assertion to bypass TypeScript's type checking
+      const { data, error } = await (supabase as any)
         .from("notes")
         .select("*")
-        .order("created_at", { ascending: false }) as { data: any[], error: any };
+        .order("created_at", { ascending: false });
         
       if (error) {
         toast({ title: "Error loading notes", description: error.message, variant: "destructive" });
@@ -65,9 +66,10 @@ const NotesPage = () => {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.from("notes").insert([
-        { title, content }
-      ] as any); // Using 'as any' to bypass type checking for the insert
+      // Use type assertion to bypass TypeScript's type checking
+      const { error } = await (supabase as any)
+        .from("notes")
+        .insert([{ title, content }]);
       
       if (error) {
         toast({ title: "Error adding note", description: error.message, variant: "destructive" });
