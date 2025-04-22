@@ -20,6 +20,30 @@ import { initialNodes, initialEdges } from '@/data/flowData';
 import { validateBeforeExecution } from '@/utils/modelValidation';
 import { toast } from '@/components/ui/use-toast';
 
+// Import the AgentNodeData interface
+import { FlowNode as FlowNodeType } from '@/flow/types';
+
+// Define the AgentNodeData type to match the one in ConfigurationPanel
+interface AgentNodeData extends Record<string, unknown> {
+  label: string;
+  type: string;
+  status?: 'active' | 'idle' | 'error';
+  metrics?: {
+    tasksProcessed: number;
+    latency: number;
+    errorRate: number;
+  };
+  modelId?: string;
+  config?: {
+    systemPrompt?: string;
+    temperature?: number;
+    maxTokens?: number;
+    streamResponse?: boolean;
+    retryOnError?: boolean;
+    [key: string]: any;
+  };
+}
+
 const nodeTypes = {
   agent: AgentNode,
 };
@@ -35,14 +59,14 @@ export function FlowView() {
     [setEdges]
   );
 
-  const onNodeClick = (_: React.MouseEvent, node: ReactFlowNode) => {
+  const onNodeClick = (_: React.MouseEvent, node: ReactFlowNode<AgentNodeData>) => {
     setSelectedNode(node.id);
   };
 
   const selectedNodeData = selectedNode ? nodes.find(n => n.id === selectedNode) : null;
 
-  const updateNodeData = (nodeId: string, updater: (prev: ReactFlowNode) => ReactFlowNode) => {
-    setNodes((ns) => ns.map(n => (n.id === nodeId ? updater(n) : n)));
+  const updateNodeData = (nodeId: string, updater: (prev: ReactFlowNode<AgentNodeData>) => ReactFlowNode<AgentNodeData>) => {
+    setNodes((ns) => ns.map(n => (n.id === nodeId ? updater(n as ReactFlowNode<AgentNodeData>) : n)));
   };
 
   useEffect(() => {
@@ -125,7 +149,7 @@ export function FlowView() {
         </div>
         {selectedNode && selectedNodeData && (
           <ConfigurationPanel 
-            node={selectedNodeData}
+            node={selectedNodeData as ReactFlowNode<AgentNodeData>}
             onNodeChange={(updater) => updateNodeData(selectedNode, updater)}
             onClose={() => setSelectedNode(null)}
           />

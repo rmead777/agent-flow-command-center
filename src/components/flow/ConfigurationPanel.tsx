@@ -20,7 +20,7 @@ import { Node as ReactFlowNode } from '@xyflow/react';
 import { FlowNode as FlowNodeType } from '@/flow/types';
 
 // Define a proper type for the node data
-interface AgentNodeData {
+interface AgentNodeData extends Record<string, unknown> {
   label: string;
   type: string;
   status?: 'active' | 'idle' | 'error';
