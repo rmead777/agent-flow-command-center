@@ -7,8 +7,9 @@ import { FlowView } from "@/components/dashboard/FlowView";
 import { AgentMetricsView } from "@/components/dashboard/AgentMetricsView";
 import { LogsView } from "@/components/dashboard/LogsView";
 import { NotificationBar } from "@/components/dashboard/NotificationBar";
+import APIKeysPage from "@/pages/APIKeysPage";
 
-type View = "flow" | "metrics" | "logs";
+type View = "flow" | "metrics" | "logs" | "api-keys";
 
 const Dashboard = () => {
   const [currentView, setCurrentView] = useState<View>("flow");
@@ -45,6 +46,7 @@ const Dashboard = () => {
             {currentView === "flow" && <FlowView />}
             {currentView === "metrics" && <AgentMetricsView />}
             {currentView === "logs" && <LogsView />}
+            {currentView === "api-keys" && <APIKeysPage />}
           </main>
         </div>
       </div>

@@ -1,5 +1,5 @@
 
-import { Home, BarChart3, FileText } from "lucide-react";
+import { Home, BarChart3, FileText, Key } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/sidebar";
 
 interface DashboardSidebarProps {
-  currentView: "flow" | "metrics" | "logs";
-  setCurrentView: (view: "flow" | "metrics" | "logs") => void;
+  currentView: "flow" | "metrics" | "logs" | "api-keys";
+  setCurrentView: (view: "flow" | "metrics" | "logs" | "api-keys") => void;
 }
 
 export function DashboardSidebar({
@@ -33,6 +33,11 @@ export function DashboardSidebar({
       title: "Logs",
       view: "logs" as const,
       icon: FileText,
+    },
+    {
+      title: "API Keys",
+      view: "api-keys" as const,
+      icon: Key,
     },
   ];
 
