@@ -1,0 +1,64 @@
+
+import { Handle, Position } from '@xyflow/react';
+
+interface AgentNodeProps {
+  data: {
+    label: string;
+    type: string;
+    status: 'active' | 'idle' | 'error';
+    metrics: {
+      tasksProcessed: number;
+      latency: number;
+      errorRate: number;
+    };
+  };
+  selected: boolean;
+}
+
+export function AgentNode({ data, selected }: AgentNodeProps) {
+  const getNodeStyle = () => {
+    if (data.type === 'input') return 'bg-indigo-900 text-indigo-100';
+    if (data.type === 'action') return 'bg-purple-900 text-purple-100';
+    if (data.type === 'response') return 'bg-green-900 text-green-100';
+    return 'bg-gray-800 text-gray-100';
+  };
+  
+  const getStatusColor = () => {
+    if (data.status === 'active') return 'bg-green-500';
+    if (data.status === 'error') return 'bg-red-500';
+    return 'bg-yellow-500';
+  };
+
+  return (
+    <div 
+      className={`rounded-md p-4 shadow-md transition-shadow ${getNodeStyle()} ${
+        selected ? 'ring-2 ring-white/50' : ''
+      }`}
+      style={{ minWidth: 180 }}
+    >
+      <Handle type="target" position={Position.Top} className="!bg-gray-300" />
+      
+      <div className="mb-2 flex items-center justify-between">
+        <div className="text-sm font-medium">{data.label}</div>
+        <div className={`h-2 w-2 rounded-full ${getStatusColor()}`} />
+      </div>
+      
+      <div className="flex flex-col gap-1 text-xs opacity-80">
+        <div className="flex justify-between">
+          <span>Tasks:</span>
+          <span>{data.metrics.tasksProcessed}</span>
+        </div>
+        <div className="flex justify-between">
+          <span>Latency:</span>
+          <span>{data.metrics.latency}ms</span>
+        </div>
+        <div className="flex justify-between">
+          <span>Error Rate:</span>
+          <span>{data.metrics.errorRate}%</span>
+        </div>
+      </div>
+      
+      <Handle type="source" position={Position.Bottom} className="!bg-gray-300" />
+    </div>
+  );
+}
