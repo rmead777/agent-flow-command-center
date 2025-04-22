@@ -119,15 +119,17 @@ const APIKeysPage = () => {
 
     setLoading(true);
     try {
-      // Upsert allows updating the provider's key if it already exists
-      // Only one key per provider per user
+      // Fix: Use a single object with correct types for the upsert operation
       const { error } = await supabase
         .from('api_keys')
-        .upsert({
-          user_id: userId,
-          provider: selectedProvider,
-          api_key: apiKey
-        }, { onConflict: ['user_id', 'provider'] });
+        .upsert(
+          {
+            user_id: userId,
+            provider: selectedProvider,
+            api_key: apiKey
+          }, 
+          { onConflict: 'user_id,provider' }
+        );
 
       if (error) throw error;
 
