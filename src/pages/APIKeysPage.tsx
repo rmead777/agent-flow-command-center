@@ -26,14 +26,59 @@ const APIKeysPage = () => {
   const [selectedProvider, setSelectedProvider] = useState('');
   const [apiKey, setAPIKey] = useState('');
   const [loading, setLoading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Get current user on component mount
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const currentUserId = session?.user?.id;
+      setUserId(currentUserId);
+      
+      // Only fetch API keys if we have a user ID
+      if (currentUserId) {
+        fetchAPIKeys();
+      } else {
+        // If not authenticated, redirect to login or show message
+        toast({
+          title: "Authentication Required",
+          description: "Please sign in to manage your API keys",
+          variant: "destructive"
+        });
+      }
+    };
+    
+    getUser();
+  }, []);
+
+  // Set up auth state listener
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        const newUserId = session?.user?.id;
+        setUserId(newUserId);
+        
+        if (newUserId) {
+          fetchAPIKeys();
+        } else {
+          setAPIKeys([]);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Fetch existing API keys
   const fetchAPIKeys = async () => {
+    if (!userId) return;
+    
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('api_keys')
-        .select('id, provider, created_at');
+        .select('id, provider, created_at')
+        .eq('user_id', userId);
       
       if (error) throw error;
       
@@ -52,6 +97,15 @@ const APIKeysPage = () => {
   const handleAddAPIKey = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!userId) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to add API keys",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     if (!selectedProvider || !apiKey.trim()) {
       toast({
         title: "Validation Error",
@@ -66,6 +120,7 @@ const APIKeysPage = () => {
       const { error } = await supabase
         .from('api_keys')
         .upsert({
+          user_id: userId,
           provider: selectedProvider,
           api_key: apiKey
         });
@@ -92,12 +147,15 @@ const APIKeysPage = () => {
 
   // Delete an API key
   const handleDeleteAPIKey = async (id: string) => {
+    if (!userId) return;
+    
     setLoading(true);
     try {
       const { error } = await supabase
         .from('api_keys')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', userId);
       
       if (error) throw error;
       
@@ -113,9 +171,21 @@ const APIKeysPage = () => {
     setLoading(false);
   };
 
-  useEffect(() => {
-    fetchAPIKeys();
-  }, []);
+  if (!userId) {
+    return (
+      <div className="max-w-2xl mx-auto mt-10 px-4 text-center">
+        <h1 className="text-3xl font-bold mb-6">Manage API Keys</h1>
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-lg mb-4">You need to be signed in to manage your API keys.</p>
+            <Button onClick={() => window.location.href = "/auth"}>
+              Sign In
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto mt-10 px-4">
