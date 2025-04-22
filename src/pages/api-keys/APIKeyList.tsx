@@ -17,15 +17,19 @@ interface Props {
 }
 
 const APIKeyList: React.FC<Props> = ({ apiKeys, loading, onDelete }) => {
-  if (apiKeys.length === 0)
+  console.log("Rendering API Keys list:", apiKeys);
+  
+  if (apiKeys.length === 0) {
     return (
-      <div className="text-gray-500 text-center">
+      <div className="text-gray-500 text-center mt-4">
         No API keys added yet
       </div>
     );
+  }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 mt-4">
+      <h2 className="text-xl font-semibold mb-2">Your API Keys</h2>
       {apiKeys.map((key) => (
         <Card key={key.id} className="flex justify-between items-center p-4">
           <div>

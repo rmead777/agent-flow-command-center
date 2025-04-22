@@ -61,21 +61,26 @@ const APIKeysPage = () => {
 
     setLoading(true);
     try {
+      console.log("Fetching API keys for user:", userId);
       const { data, error } = await supabase
         .from("api_keys")
         .select("id, provider, model, created_at")
         .eq("user_id", userId);
 
       if (error) throw error;
+      
+      console.log("API keys fetched:", data);
       setAPIKeys(data || []);
     } catch (error: any) {
+      console.error("Error fetching API keys:", error);
       toast({
         title: "Error fetching API keys",
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   // Add API key with model support
@@ -114,15 +119,16 @@ const APIKeysPage = () => {
         title: "API Key Saved",
         description: `API key for ${provider} - ${model} saved.`,
       });
-      fetchAPIKeys();
+      fetchAPIKeys(); // Refresh the list after adding
     } catch (error: any) {
       toast({
         title: "Error Saving API Key",
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   // Enhance delete to support model-specific keys
@@ -144,15 +150,16 @@ const APIKeysPage = () => {
         title: "API Key Deleted",
         description: `${provider} - ${model} API key removed.`,
       });
-      fetchAPIKeys();
+      fetchAPIKeys(); // Refresh the list after deletion
     } catch (error: any) {
       toast({
         title: "Error Deleting API Key",
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   if (!userId) {
