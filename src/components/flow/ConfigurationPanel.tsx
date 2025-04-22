@@ -16,16 +16,16 @@ import { Switch } from '@/components/ui/switch';
 import { PROVIDERS } from '@/pages/api-keys/apiKeyProviders';
 import { getAdapter, getModelsByProvider } from '@/adapters/adapterRegistry';
 import { useState, useEffect } from 'react';
-import { Node } from '@xyflow/react';
+import { Node as FlowNode } from '@xyflow/react';
 
 interface ConfigurationPanelProps {
-  node: Node; // live node
-  onNodeChange: (updater: (prev: Node) => Node) => void;
+  node: FlowNode;
+  onNodeChange: (updater: (prev: FlowNode) => FlowNode) => void;
   onClose: () => void;
 }
 
 export function ConfigurationPanel({ node, onNodeChange, onClose }: ConfigurationPanelProps) {
-  const data = node.data as any;
+  const data = node.data || {};
 
   // Helper: Get full models by provider mapping
   const modelsByProvider = getModelsByProvider();
@@ -53,7 +53,7 @@ export function ConfigurationPanel({ node, onNodeChange, onClose }: Configuratio
       data: {
         ...prev.data,
         config: {
-          ...(prev.data.config ?? {}),
+          ...(prev.data?.config || {}),
           [key]: value
         }
       }
@@ -88,7 +88,7 @@ export function ConfigurationPanel({ node, onNodeChange, onClose }: Configuratio
         ...prev.data,
         modelId: "",
         config: {
-          ...(prev.data.config ?? {}), // can keep config
+          ...(prev.data?.config || {}), // can keep config
         }
       }
     }));
