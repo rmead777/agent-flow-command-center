@@ -1,4 +1,3 @@
-
 import { ModelAdapter } from "./ModelAdapter";
 import { OpenAIAdapter } from "./OpenAIAdapter";
 import { AnthropicAdapter } from "./AnthropicAdapter";
@@ -7,6 +6,7 @@ import { MistralAdapter } from "./MistralAdapter";
 import { CohereAdapter } from "./CohereAdapter";
 import { XAIAdapter } from "./XAIAdapter";
 import { DeepSeekAdapter } from "./DeepSeekAdapter";
+import { MockAdapter } from "./MockAdapter";
 
 // Register all provider models
 export const adapterRegistry: Record<string, ModelAdapter> = {
@@ -47,6 +47,8 @@ export const adapterRegistry: Record<string, ModelAdapter> = {
   // DeepSeek Models
   "DeepSeek-R1": new DeepSeekAdapter("DeepSeek-R1"),
   "DeepSeek-V3-0324": new DeepSeekAdapter("DeepSeek-V3-0324"),
+  // Mock Model
+  "mock-model": new MockAdapter(),
 };
 
 // Utility function to get all available models by provider
