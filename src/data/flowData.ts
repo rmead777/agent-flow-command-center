@@ -1,103 +1,92 @@
 
-// Sample flow data for the flow visualization
-export const initialNodes = [
+import { Node, Edge } from '@xyflow/react';
+
+export const initialNodes: Node[] = [
   {
-    id: 'input-1',
+    id: 'node-1',
     type: 'agent',
-    position: { x: 250, y: 0 },
+    position: { x: 250, y: 100 },
     data: {
       label: 'User Input',
       type: 'input',
-      status: 'active' as const,
+      status: 'idle',
       metrics: {
-        tasksProcessed: 128,
-        latency: 15,
-        errorRate: 0,
-      },
-    },
-  },
-  {
-    id: 'action-1',
-    type: 'agent',
-    position: { x: 100, y: 150 },
-    data: {
-      label: 'Query Parser',
-      type: 'action',
-      status: 'active' as const,
-      metrics: {
-        tasksProcessed: 122,
-        latency: 34,
-        errorRate: 1.2,
-      },
-    },
-  },
-  {
-    id: 'action-2',
-    type: 'agent',
-    position: { x: 400, y: 150 },
-    data: {
-      label: 'Context Retriever',
-      type: 'action',
-      status: 'idle' as const,
-      metrics: {
-        tasksProcessed: 98,
-        latency: 145,
-        errorRate: 5.4,
-      },
-    },
-  },
-  {
-    id: 'action-3',
-    type: 'agent',
-    position: { x: 100, y: 300 },
-    data: {
-      label: 'Reasoning Agent',
-      type: 'action',
-      status: 'error' as const,
-      metrics: {
-        tasksProcessed: 76,
-        latency: 220,
-        errorRate: 12.8,
-      },
-    },
-  },
-  {
-    id: 'action-4',
-    type: 'agent',
-    position: { x: 400, y: 300 },
-    data: {
-      label: 'Content Generator',
-      type: 'action',
-      status: 'active' as const,
-      metrics: {
-        tasksProcessed: 84,
-        latency: 180,
-        errorRate: 3.2,
-      },
-    },
-  },
-  {
-    id: 'output-1',
-    type: 'agent',
-    position: { x: 250, y: 450 },
-    data: {
-      label: 'Response Formatter',
-      type: 'response',
-      status: 'active' as const,
-      metrics: {
-        tasksProcessed: 105,
-        latency: 28,
+        tasksProcessed: 124,
+        latency: 12,
         errorRate: 0.5,
       },
+      // Add model ID and config
+      modelId: 'gpt-4o',
+      config: {
+        systemPrompt: 'You are a helpful AI assistant.',
+        temperature: 0.7,
+        maxTokens: 512,
+        streamResponse: true,
+        retryOnError: true
+      }
+    },
+  },
+  {
+    id: 'node-2',
+    type: 'agent',
+    position: { x: 250, y: 250 },
+    data: {
+      label: 'Process Data',
+      type: 'action',
+      status: 'active',
+      metrics: {
+        tasksProcessed: 87,
+        latency: 56,
+        errorRate: 2.1,
+      },
+      // Add model ID and config
+      modelId: 'claude-3.7-sonnet',
+      config: {
+        systemPrompt: 'You analyze and process data efficiently.',
+        temperature: 0.5,
+        maxTokens: 1024,
+        streamResponse: false,
+        retryOnError: true
+      }
+    },
+  },
+  {
+    id: 'node-3',
+    type: 'agent',
+    position: { x: 250, y: 400 },
+    data: {
+      label: 'Generate Response',
+      type: 'response',
+      status: 'error',
+      metrics: {
+        tasksProcessed: 56,
+        latency: 230,
+        errorRate: 5.3,
+      },
+      // Add model ID and config
+      modelId: 'gemini-2.5-pro',
+      config: {
+        systemPrompt: 'You generate thoughtful and accurate responses.',
+        temperature: 0.8,
+        maxTokens: 2048,
+        streamResponse: true,
+        retryOnError: false
+      }
     },
   },
 ];
 
-export const initialEdges = [
-  { id: 'e1-2', source: 'input-1', target: 'action-1', animated: true },
-  { id: 'e1-3', source: 'input-1', target: 'action-2', animated: true },
-  { id: 'e2-4', source: 'action-1', target: 'action-3' },
-  { id: 'e3-5', source: 'action-2', target: 'action-4' },
-  { id: 'e4-6', source: 'action-3', target: 'output-1' },
-  { id: 'e5-6', source: 'action-4', target: 'output-1' },
+export const initialEdges: Edge[] = [
+  {
+    id: 'edge-1-2',
+    source: 'node-1',
+    target: 'node-2',
+    animated: true,
+  },
+  {
+    id: 'edge-2-3',
+    source: 'node-2',
+    target: 'node-3',
+    animated: true,
+  },
 ];

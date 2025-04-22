@@ -17,6 +17,7 @@ import { AgentNode } from '@/components/flow/AgentNode';
 import { ConfigurationPanel } from '@/components/flow/ConfigurationPanel';
 import { initialNodes, initialEdges } from '@/data/flowData';
 
+// Add modelId and config properties to initialNodes
 const nodeTypes = {
   agent: AgentNode,
 };

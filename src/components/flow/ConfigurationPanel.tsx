@@ -15,8 +15,9 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { initialNodes } from '@/data/flowData';
 import { PROVIDERS } from '@/pages/api-keys/apiKeyProviders';
-import { getAdapter } from '@/adapters/adapterRegistry';
+import { getAdapter, getModelsByProvider } from '@/adapters/adapterRegistry';
 import { useState, useEffect } from 'react';
+import { FlowNode } from '@/flow/types';
 
 interface ConfigurationPanelProps {
   nodeId: string;
@@ -24,13 +25,39 @@ interface ConfigurationPanelProps {
 }
 
 export function ConfigurationPanel({ nodeId, onClose }: ConfigurationPanelProps) {
-  const node = initialNodes.find(n => n.id === nodeId);
+  // Find the node in initialNodes and cast it to include our expected properties
+  const node = initialNodes.find(n => n.id === nodeId) as unknown as {
+    id: string;
+    data: {
+      label: string;
+      type: string;
+      status: 'active' | 'idle' | 'error';
+      metrics: {
+        tasksProcessed: number;
+        latency: number;
+        errorRate: number;
+      };
+      modelId?: string;
+      config?: {
+        systemPrompt?: string;
+        temperature?: number;
+        maxTokens?: number;
+        streamResponse?: boolean;
+        retryOnError?: boolean;
+        [key: string]: any;
+      };
+    }
+  };
+  
   const [selectedProvider, setSelectedProvider] = useState<string>("");
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [systemPrompt, setSystemPrompt] = useState<string>("You are an AI assistant that helps users find information. Be concise and accurate in your responses.");
   const [temperature, setTemperature] = useState<number[]>([0.7]);
   const [streamResponse, setStreamResponse] = useState<boolean>(true);
   const [retryOnError, setRetryOnError] = useState<boolean>(true);
+  
+  // Get all models by provider for the dropdown
+  const modelsByProvider = getModelsByProvider();
   
   useEffect(() => {
     if (node?.data?.modelId) {
@@ -55,7 +82,7 @@ export function ConfigurationPanel({ nodeId, onClose }: ConfigurationPanelProps)
   }
   
   const isRunning = node.data.status === 'active';
-  const availableModels = PROVIDERS.find(p => p.name === selectedProvider)?.models || [];
+  const availableModels = selectedProvider ? modelsByProvider[selectedProvider] || [] : [];
   
   return (
     <div className="h-full w-80 flex-shrink-0 overflow-auto border-l border-gray-800 bg-gray-900 p-4">
@@ -101,8 +128,9 @@ export function ConfigurationPanel({ nodeId, onClose }: ConfigurationPanelProps)
             </SelectTrigger>
             <SelectContent className="border-gray-700 bg-gray-900 text-white">
               <SelectItem value="input">Input</SelectItem>
+              <SelectItem value="model">Model</SelectItem>
               <SelectItem value="action">Action</SelectItem>
-              <SelectItem value="response">Response</SelectItem>
+              <SelectItem value="output">Output</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -130,9 +158,9 @@ export function ConfigurationPanel({ nodeId, onClose }: ConfigurationPanelProps)
               <SelectValue placeholder="Select provider" />
             </SelectTrigger>
             <SelectContent className="border-gray-700 bg-gray-900 text-white">
-              {PROVIDERS.map(provider => (
-                <SelectItem key={provider.name} value={provider.name}>
-                  {provider.name}
+              {Object.keys(modelsByProvider).map(provider => (
+                <SelectItem key={provider} value={provider}>
+                  {provider}
                 </SelectItem>
               ))}
             </SelectContent>

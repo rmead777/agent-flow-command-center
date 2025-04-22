@@ -1,5 +1,6 @@
 
 import { Handle, Position } from '@xyflow/react';
+import { FlowNode } from '@/flow/types';
 
 interface AgentNodeProps {
   data: {
@@ -10,6 +11,15 @@ interface AgentNodeProps {
       tasksProcessed: number;
       latency: number;
       errorRate: number;
+    };
+    modelId?: string;
+    config?: {
+      systemPrompt?: string;
+      temperature?: number;
+      maxTokens?: number;
+      streamResponse?: boolean;
+      retryOnError?: boolean;
+      [key: string]: any;
     };
   };
   selected: boolean;
@@ -56,6 +66,12 @@ export function AgentNode({ data, selected }: AgentNodeProps) {
           <span>Error Rate:</span>
           <span>{data.metrics.errorRate}%</span>
         </div>
+        {data.modelId && (
+          <div className="flex justify-between">
+            <span>Model:</span>
+            <span className="truncate max-w-[100px]">{data.modelId}</span>
+          </div>
+        )}
       </div>
       
       <Handle type="source" position={Position.Bottom} className="!bg-gray-300" />
