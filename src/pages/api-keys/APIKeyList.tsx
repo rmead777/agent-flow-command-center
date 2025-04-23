@@ -2,6 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
 interface APIKey {
   id: string;
@@ -19,10 +20,20 @@ interface Props {
 const APIKeyList: React.FC<Props> = ({ apiKeys, loading, onDelete }) => {
   console.log("Rendering API Keys list:", apiKeys);
   
+  if (loading) {
+    return (
+      <div className="text-center mt-4 p-4">
+        <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+        <p>Loading your API keys...</p>
+      </div>
+    );
+  }
+  
   if (apiKeys.length === 0) {
     return (
-      <div className="text-gray-500 text-center mt-4">
-        No API keys added yet
+      <div className="text-gray-500 text-center mt-4 p-4 border border-dashed rounded-lg border-gray-600">
+        <p className="mb-1">No API keys added yet</p>
+        <p className="text-sm">Add an API key above to connect to AI providers</p>
       </div>
     );
   }

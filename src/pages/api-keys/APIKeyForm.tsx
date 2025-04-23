@@ -25,33 +25,50 @@ interface Props {
   onSubmit: (provider: string, model: string, apiKey: string) => Promise<void>;
 }
 
-const APIKeyForm: React.FC<Props> = ({ loading, apiKeys, onSubmit }) => {
-  const [selectedProvider, setSelectedProvider] = useState<string>(() => {
-    return localStorage.getItem("apiKeySelectedProvider") || "";
-  });
-  const [selectedModel, setSelectedModel] = useState<string>(() => {
-    return localStorage.getItem("apiKeySelectedModel") || "";
-  });
-  const [apiKey, setAPIKey] = useState("");
+const STORAGE_KEY_PROVIDER = "apiKeySelectedProvider";
+const STORAGE_KEY_MODEL = "apiKeySelectedModel";
 
-  // Update selected model when provider changes
-  useEffect(() => {
-    setSelectedModel("");
-  }, [selectedProvider]);
+const APIKeyForm: React.FC<Props> = ({ loading, apiKeys, onSubmit }) => {
+  const [selectedProvider, setSelectedProvider] = useState<string>("");
+  const [selectedModel, setSelectedModel] = useState<string>("");
+  const [apiKey, setAPIKey] = useState("");
 
   // Load persisted selection on mount
   useEffect(() => {
-    const maybeSavedProvider = localStorage.getItem("apiKeySelectedProvider");
-    const maybeSavedModel = localStorage.getItem("apiKeySelectedModel");
-    if (maybeSavedProvider) setSelectedProvider(maybeSavedProvider);
-    if (maybeSavedModel) setSelectedModel(maybeSavedModel);
+    const savedProvider = localStorage.getItem(STORAGE_KEY_PROVIDER);
+    if (savedProvider) {
+      console.log("Restoring saved provider:", savedProvider);
+      setSelectedProvider(savedProvider);
+      
+      // Try to restore the model as well
+      const savedModel = localStorage.getItem(STORAGE_KEY_MODEL);
+      if (savedModel) {
+        console.log("Restoring saved model:", savedModel);
+        // Only set the model if it belongs to the provider
+        const providerModels = PROVIDERS.find(p => p.name === savedProvider)?.models || [];
+        if (providerModels.includes(savedModel)) {
+          setSelectedModel(savedModel);
+        }
+      }
+    }
   }, []);
 
-  // Persist selection to localStorage on change
+  // Update selected model when provider changes
   useEffect(() => {
-    if (selectedProvider) localStorage.setItem("apiKeySelectedProvider", selectedProvider);
-    if (selectedModel) localStorage.setItem("apiKeySelectedModel", selectedModel);
-  }, [selectedProvider, selectedModel]);
+    if (selectedProvider) {
+      localStorage.setItem(STORAGE_KEY_PROVIDER, selectedProvider);
+      // If provider changes, clear the model selection
+      setSelectedModel("");
+      localStorage.removeItem(STORAGE_KEY_MODEL);
+    }
+  }, [selectedProvider]);
+
+  // Save model selection to localStorage
+  useEffect(() => {
+    if (selectedModel) {
+      localStorage.setItem(STORAGE_KEY_MODEL, selectedModel);
+    }
+  }, [selectedModel]);
 
   // Get available models for the selected provider
   const availableModels =
@@ -78,11 +95,9 @@ const APIKeyForm: React.FC<Props> = ({ loading, apiKeys, onSubmit }) => {
     }
 
     await onSubmit(selectedProvider, selectedModel, apiKey);
-    setSelectedProvider("");
-    setSelectedModel("");
+    // Clear the form
     setAPIKey("");
-    localStorage.removeItem("apiKeySelectedProvider");
-    localStorage.removeItem("apiKeySelectedModel");
+    // Don't clear provider/model selections to make it easier to add multiple keys
   }
 
   return (
@@ -93,10 +108,10 @@ const APIKeyForm: React.FC<Props> = ({ loading, apiKeys, onSubmit }) => {
       <div>
         <label className="block text-sm font-medium mb-1">Provider</label>
         <Select
-          value={selectedProvider || undefined}
+          value={selectedProvider}
           onValueChange={(value) => {
+            console.log("Provider selected:", value);
             setSelectedProvider(value);
-            localStorage.setItem("apiKeySelectedProvider", value);
           }}
           disabled={loading}
         >
@@ -116,10 +131,10 @@ const APIKeyForm: React.FC<Props> = ({ loading, apiKeys, onSubmit }) => {
       <div>
         <label className="block text-sm font-medium mb-1">Model</label>
         <Select
-          value={selectedModel || undefined}
+          value={selectedModel}
           onValueChange={(value) => {
+            console.log("Model selected:", value);
             setSelectedModel(value);
-            localStorage.setItem("apiKeySelectedModel", value);
           }}
           disabled={
             !selectedProvider ||

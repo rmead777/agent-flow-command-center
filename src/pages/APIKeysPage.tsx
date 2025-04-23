@@ -15,21 +15,20 @@ interface APIKey {
 
 const APIKeysPage = () => {
   const [apiKeys, setAPIKeys] = useState<APIKey[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with loading true
   const [userId, setUserId] = useState<string | null>(null);
 
   // Get current user on component mount
   useEffect(() => {
-    let alreadyFetched = false;
     const getUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       const currentUserId = session?.user?.id;
       setUserId(currentUserId);
 
-      if (currentUserId && !alreadyFetched) {
-        alreadyFetched = true;
+      if (currentUserId) {
         fetchAPIKeys(currentUserId);
-      } else if (!currentUserId) {
+      } else {
+        setLoading(false); // No authenticated user, so stop loading
         toast({
           title: "Authentication Required",
           description: "Please sign in to manage your API keys",
@@ -51,6 +50,7 @@ const APIKeysPage = () => {
           fetchAPIKeys(newUserId);
         } else {
           setAPIKeys([]);
+          setLoading(false); // No user after auth change, stop loading
         }
       }
     );
@@ -60,18 +60,24 @@ const APIKeysPage = () => {
   // Fetch existing API keys with model information
   const fetchAPIKeys = async (uid?: string) => {
     const user = uid ?? userId;
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     try {
+      console.log(`Fetching API keys for user: ${user}`);
       const { data, error } = await supabase
         .from("api_keys")
         .select("id, provider, model, created_at")
         .eq("user_id", user);
 
       if (error) throw error;
+      console.log(`Retrieved ${data?.length || 0} API keys:`, data);
       setAPIKeys(data || []);
     } catch (error: any) {
+      console.error("Error fetching API keys:", error);
       toast({
         title: "Error fetching API keys",
         description: error.message,

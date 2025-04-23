@@ -45,6 +45,10 @@ interface ConfigurationPanelProps {
   onClose: () => void;
 }
 
+// LocalStorage keys for provider and model selections
+const STORAGE_KEY_PREFIX = 'flow_config_';
+const getNodeStorageKey = (nodeId: string, field: string) => `${STORAGE_KEY_PREFIX}${nodeId}_${field}`;
+
 export function ConfigurationPanel({ node, onNodeChange, onClose }: ConfigurationPanelProps) {
   const data = node.data || {} as AgentNodeData;
   const [tempProvider, setTempProvider] = useState<string>("");
@@ -52,12 +56,26 @@ export function ConfigurationPanel({ node, onNodeChange, onClose }: Configuratio
   // Helper: Get full models by provider mapping
   const modelsByProvider = getModelsByProvider();
 
-  // Initialize tempProvider when component mounts or node changes
+  // Initialize tempProvider and restore saved provider when component mounts or node changes
   useEffect(() => {
     if (data.modelId && getAdapter(data.modelId)) {
+      // If node already has a model, use its provider
       setTempProvider(getAdapter(data.modelId)!.providerName);
+    } else {
+      // Try to restore from localStorage based on node ID
+      const savedProvider = localStorage.getItem(getNodeStorageKey(node.id, 'provider'));
+      if (savedProvider) {
+        setTempProvider(savedProvider);
+        
+        // Also restore model if available
+        const savedModel = localStorage.getItem(getNodeStorageKey(node.id, 'model'));
+        if (savedModel && modelsByProvider[savedProvider]?.includes(savedModel)) {
+          // Only set model if it's valid for the provider
+          updateModel(savedModel);
+        }
+      }
     }
-  }, [data.modelId]);
+  }, [node.id, data.modelId]);
 
   // Controlled fields: always use node-prop as source of truth. Local state only for slider, but write-through.
   const selectedProvider = tempProvider;
@@ -107,7 +125,10 @@ export function ConfigurationPanel({ node, onNodeChange, onClose }: Configuratio
   };
 
   const updateProvider = (provider: string) => {
-    // Update local state first
+    // Save provider to localStorage
+    localStorage.setItem(getNodeStorageKey(node.id, 'provider'), provider);
+    
+    // Update local state
     setTempProvider(provider);
     
     // Clear modelId, user must re-select model for provider
@@ -124,6 +145,9 @@ export function ConfigurationPanel({ node, onNodeChange, onClose }: Configuratio
   };
 
   const updateModel = (modelId: string) => {
+    // Save model to localStorage
+    localStorage.setItem(getNodeStorageKey(node.id, 'model'), modelId);
+    
     onNodeChange(prev => ({
       ...prev,
       data: {
