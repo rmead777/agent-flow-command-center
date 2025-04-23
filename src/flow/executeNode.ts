@@ -1,4 +1,3 @@
-
 import { FlowNode } from "./types";
 import { getAdapter } from "../adapters/adapterRegistry";
 import { toast } from "@/components/ui/use-toast";
@@ -111,16 +110,25 @@ export async function executeNode(node: FlowNode, input: any): Promise<any> {
     console.log(`Executing ${providerName} model: ${node.modelId}`);
     
     // Add specific handling for Perplexity models
-    if (node.modelId === 'sonar-pro') {
-      // Properly type the config to access systemPrompt
-      const perplexityConfig: { 
+    if (node.modelId === 'sonar-pro' || node.modelId === 'sonar-deep-research') {
+      // Define the type for Perplexity config
+      interface PerplexityConfig {
         systemPrompt: string;
         temperature?: number;
         maxTokens?: number;
         [key: string]: any;
-      } = {
-        ...config,
-        systemPrompt: config.systemPrompt || "You are an AI assistant providing concise and helpful information.",
+      }
+      
+      const defaultConfig: PerplexityConfig = {
+        systemPrompt: "You are an AI assistant providing concise and helpful information.",
+        temperature: 0.7,
+        maxTokens: 1000
+      };
+      
+      // Merge default config with user config
+      const perplexityConfig: PerplexityConfig = {
+        ...defaultConfig,
+        ...config
       };
       
       const perplexityRequestBody = adapter.buildRequest(processedInput, perplexityConfig);

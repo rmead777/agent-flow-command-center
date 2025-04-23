@@ -75,7 +75,8 @@ export const PROVIDERS = [
   {
     name: 'Perplexity',
     models: [
-      'sonar-pro'
+      'sonar-pro',
+      'sonar-deep-research'
     ]
   },
 ];

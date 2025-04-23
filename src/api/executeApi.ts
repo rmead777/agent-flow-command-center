@@ -429,15 +429,13 @@ export async function executePerplexity(userId: string, modelId: string, request
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.1-sonar-small-128k-online', // Default model for now
+        model: modelId,
         messages: request.messages,
         temperature: request.temperature || 0.2,
         top_p: 0.9,
         max_tokens: request.max_tokens || 1000,
         return_images: false,
         return_related_questions: false,
-        search_domain_filter: ['perplexity.ai'],
-        search_recency_filter: 'month',
         frequency_penalty: 1,
         presence_penalty: 0
       }),
@@ -461,7 +459,9 @@ export async function executePerplexity(userId: string, modelId: string, request
           role: 'assistant'
         }
       }],
-      usage: data.usage || {}
+      usage: data.usage || {},
+      citations: data.citations || [],
+      raw: data
     };
   } catch (error) {
     return handleApiError(error);

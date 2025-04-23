@@ -63,6 +63,7 @@ export const adapterRegistry: Record<string, ModelAdapter> = {
   
   // Perplexity Models
   "sonar-pro": new PerplexityAdapter("sonar-pro"),
+  "sonar-deep-research": new PerplexityAdapter("sonar-deep-research"),
 };
 
 // Utility function to get all available models by provider

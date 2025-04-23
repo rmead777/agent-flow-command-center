@@ -6,15 +6,15 @@ export class PerplexityAdapter implements ModelAdapter {
   providerName = "Perplexity";
   supportedFeatures = ["text", "web_search"];
 
-  constructor(modelName = "sonar-pro") {
+  constructor(modelName: string) {
     this.modelName = modelName;
   }
 
   buildRequest(input: string, config: any) {
     return {
-      model: "llama-3.1-sonar-small-128k-online",
+      model: this.modelName,
       messages: [
-        { role: "system", content: config.systemPrompt || "You are helpful." },
+        { role: "system", content: config.systemPrompt || "You are a helpful assistant." },
         { role: "user", content: input }
       ],
       temperature: config.temperature ?? 0.7,
@@ -31,6 +31,7 @@ export class PerplexityAdapter implements ModelAdapter {
     return {
       output: response.choices?.[0]?.message?.content || "",
       usage: response.usage || {},
+      citations: response.citations || [],
       raw: response
     };
   }
