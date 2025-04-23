@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { useNodesState, useEdgesState, addEdge, Connection, NodeMouseHandler, Node } from '@xyflow/react';
 import { FlowToolbar } from './FlowToolbar';
@@ -285,7 +286,7 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
         } else {
           return {
             id: node.id,
-            type: node.type as "input" | "model" | "action" | "output",
+            type: node.type as "input" | "model" | "action" | "output" | "inputPrompt",
             modelId: "modelId" in nodeData ? nodeData.modelId : undefined,
             config: "config" in nodeData ? {
               ...nodeData.config,
@@ -335,7 +336,12 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
                 return { nodeId: node.id, success: true };
               }
 
-              if (inputs.length === 0) {
+              // Only use initialPrompt if:
+              // 1. This node has no inputs (inputs array is empty)
+              // 2. AND this node is NOT an inputPrompt type (which we already handled above)
+              // 3. AND we have an initialPrompt value from a prompt node
+              if (inputs.length === 0 && initialPrompt) {
+                console.log(`Node ${node.id} has no inputs, using initialPrompt: ${initialPrompt}`);
                 inputs = [initialPrompt];
               }
 
@@ -562,3 +568,4 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     </div>
   );
 });
+

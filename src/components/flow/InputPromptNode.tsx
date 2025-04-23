@@ -1,6 +1,7 @@
 
 import { Handle, Position } from '@xyflow/react';
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect } from "react";
 import { MessageSquare } from "lucide-react";
 
@@ -28,7 +29,7 @@ export function InputPromptNode({ data, selected, id }: InputPromptNodeProps) {
   }, [data.prompt]);
 
   // Sync input with parent workflow state
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
     setPrompt(newValue);
     if (data.onPromptChange) {
@@ -49,7 +50,7 @@ export function InputPromptNode({ data, selected, id }: InputPromptNodeProps) {
   return (
     <div
       className={`rounded-md p-4 shadow-md bg-sky-900 text-sky-100 border-2 ${selected ? "ring-2 ring-white/60" : "border-sky-800"}`}
-      style={{ width: 210, minHeight: 90 }}
+      style={{ width: 250, minHeight: 120 }}
     >
       <Handle type="target" position={Position.Top} className="!bg-gray-300" isConnectable={true} />
       <div className="flex items-center justify-between mb-2">
@@ -59,11 +60,11 @@ export function InputPromptNode({ data, selected, id }: InputPromptNodeProps) {
         </div>
         <div className={`h-2 w-2 rounded-full ${getStatusColor()}`} />
       </div>
-      <Input
+      <Textarea
         value={prompt}
         onChange={handleChange}
         placeholder="Enter initial workflow prompt"
-        className="text-gray-900 bg-slate-50 border"
+        className="text-gray-900 bg-slate-50 border min-h-20"
         spellCheck
       />
       <Handle type="source" position={Position.Bottom} className="!bg-gray-300" isConnectable={true} />
