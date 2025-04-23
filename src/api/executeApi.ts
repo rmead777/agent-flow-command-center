@@ -431,9 +431,9 @@ export async function executePerplexity(userId: string, modelId: string, request
       body: JSON.stringify({
         model: modelId,
         messages: request.messages,
-        temperature: request.temperature || 0.2,
-        top_p: 0.9,
+        temperature: request.temperature || 0.7,
         max_tokens: request.max_tokens || 1000,
+        top_p: 0.9,
         return_images: false,
         return_related_questions: false,
         frequency_penalty: 1,
@@ -452,12 +452,15 @@ export async function executePerplexity(userId: string, modelId: string, request
     }
     
     const data = await perplexityResponse.json();
+    
+    // Return data in the standardized format but preserving Perplexity-specific fields
     return {
       choices: [{
         message: {
           content: data.choices[0].message.content,
           role: 'assistant'
-        }
+        },
+        finish_reason: data.choices[0].finish_reason || 'stop'
       }],
       usage: data.usage || {},
       citations: data.citations || [],

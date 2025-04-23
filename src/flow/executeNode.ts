@@ -116,13 +116,15 @@ export async function executeNode(node: FlowNode, input: any): Promise<any> {
         systemPrompt: string;
         temperature?: number;
         maxTokens?: number;
+        enableWebSearch?: boolean;
         [key: string]: any;
       }
       
       const defaultConfig: PerplexityConfig = {
         systemPrompt: "You are an AI assistant providing concise and helpful information.",
         temperature: 0.7,
-        maxTokens: 1000
+        maxTokens: 1000,
+        enableWebSearch: true
       };
       
       // Merge default config with user config
@@ -133,7 +135,7 @@ export async function executeNode(node: FlowNode, input: any): Promise<any> {
       
       const perplexityRequestBody = adapter.buildRequest(processedInput, perplexityConfig);
       
-      // Use the default executeModel which now includes Perplexity
+      // Execute the model using our API functions
       return await executeModel(adapter.providerName, node.modelId, perplexityRequestBody);
     }
     

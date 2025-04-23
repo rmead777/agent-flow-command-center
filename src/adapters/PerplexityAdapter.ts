@@ -6,8 +6,8 @@ export class PerplexityAdapter implements ModelAdapter {
   providerName = "Perplexity";
   supportedFeatures = ["text", "web_search"];
 
-  constructor(modelName: string) {
-    this.modelName = modelName;
+  constructor(modelId: string) {
+    this.modelName = modelId;
   }
 
   buildRequest(input: string, config: any) {
@@ -39,16 +39,17 @@ export class PerplexityAdapter implements ModelAdapter {
   validateConfig(config: any) {
     return (
       typeof config === 'object' && 
-      (config.temperature === undefined || (typeof config.temperature === "number" && config.temperature >= 0 && config.temperature <= 1)) &&
-      (config.maxTokens === undefined || (typeof config.maxTokens === "number" && config.maxTokens > 0))
+      (config.systemPrompt === undefined || typeof config.systemPrompt === 'string') &&
+      (config.temperature === undefined || (typeof config.temperature === 'number' && config.temperature >= 0 && config.temperature <= 1)) &&
+      (config.maxTokens === undefined || (typeof config.maxTokens === 'number' && config.maxTokens > 0))
     );
   }
 
   getDefaultConfig() {
     return {
+      systemPrompt: "You are a helpful assistant.",
       temperature: 0.7,
       maxTokens: 1000,
-      systemPrompt: "You are a helpful assistant.",
       enableWebSearch: true
     };
   }
