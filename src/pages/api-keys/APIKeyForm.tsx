@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { PROVIDERS } from "./apiKeyProviders";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,8 +30,16 @@ const APIKeyForm: React.FC<Props> = ({ loading, apiKeys, onSubmit }) => {
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [apiKey, setAPIKey] = useState("");
 
-  const availableModels =
+  // Reset model selection when provider changes
+  useEffect(() => {
+    setSelectedModel("");
+  }, [selectedProvider]);
+
+  // Get available models for the selected provider
+  const availableModels = 
     PROVIDERS.find((p) => p.name === selectedProvider)?.models || [];
+  
+  // Filter out models that already have API keys
   const availableModelOptions = availableModels.filter(
     (model) =>
       !apiKeys.some(
@@ -50,6 +58,7 @@ const APIKeyForm: React.FC<Props> = ({ loading, apiKeys, onSubmit }) => {
       });
       return;
     }
+    
     await onSubmit(selectedProvider, selectedModel, apiKey);
     setSelectedProvider("");
     setSelectedModel("");
@@ -59,14 +68,15 @@ const APIKeyForm: React.FC<Props> = ({ loading, apiKeys, onSubmit }) => {
   return (
     <form
       onSubmit={handleSubmit}
-      className="mb-8 bg-white dark:bg-gray-900 rounded-lg p-4 shadow flex flex-col gap-2"
+      className="mb-8 bg-white dark:bg-gray-900 rounded-lg p-4 shadow flex flex-col gap-4"
     >
       <div>
+        <label className="block text-sm font-medium mb-1">Provider</label>
         <Select
           value={selectedProvider}
           onValueChange={(value) => {
+            console.log("Provider selected:", value);
             setSelectedProvider(value);
-            setSelectedModel("");
           }}
           disabled={loading}
         >
@@ -82,10 +92,15 @@ const APIKeyForm: React.FC<Props> = ({ loading, apiKeys, onSubmit }) => {
           </SelectContent>
         </Select>
       </div>
+      
       <div>
+        <label className="block text-sm font-medium mb-1">Model</label>
         <Select
           value={selectedModel}
-          onValueChange={setSelectedModel}
+          onValueChange={(value) => {
+            console.log("Model selected:", value);
+            setSelectedModel(value);
+          }}
           disabled={
             !selectedProvider ||
             loading ||
@@ -110,13 +125,18 @@ const APIKeyForm: React.FC<Props> = ({ loading, apiKeys, onSubmit }) => {
           </SelectContent>
         </Select>
       </div>
-      <Input
-        type="password"
-        placeholder="Enter API Key"
-        value={apiKey}
-        onChange={(e) => setAPIKey(e.target.value)}
-        disabled={loading || !selectedProvider || !selectedModel}
-      />
+      
+      <div>
+        <label className="block text-sm font-medium mb-1">API Key</label>
+        <Input
+          type="password"
+          placeholder="Enter API Key"
+          value={apiKey}
+          onChange={(e) => setAPIKey(e.target.value)}
+          disabled={loading || !selectedProvider || !selectedModel}
+        />
+      </div>
+      
       <Button
         type="submit"
         disabled={

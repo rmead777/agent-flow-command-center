@@ -17,7 +17,6 @@ import { PROVIDERS } from '@/pages/api-keys/apiKeyProviders';
 import { getAdapter, getModelsByProvider } from '@/adapters/adapterRegistry';
 import { useState, useEffect } from 'react';
 import { Node as ReactFlowNode } from '@xyflow/react';
-import { FlowNode as FlowNodeType } from '@/flow/types';
 
 // Define a proper type for the node data
 interface AgentNodeData extends Record<string, unknown> {
@@ -48,14 +47,20 @@ interface ConfigurationPanelProps {
 
 export function ConfigurationPanel({ node, onNodeChange, onClose }: ConfigurationPanelProps) {
   const data = node.data || {} as AgentNodeData;
+  const [tempProvider, setTempProvider] = useState<string>("");
 
   // Helper: Get full models by provider mapping
   const modelsByProvider = getModelsByProvider();
 
+  // Initialize tempProvider when component mounts or node changes
+  useEffect(() => {
+    if (data.modelId && getAdapter(data.modelId)) {
+      setTempProvider(getAdapter(data.modelId)!.providerName);
+    }
+  }, [data.modelId]);
+
   // Controlled fields: always use node-prop as source of truth. Local state only for slider, but write-through.
-  const selectedProvider = data.modelId && getAdapter(data.modelId)
-    ? getAdapter(data.modelId)!.providerName
-    : "";
+  const selectedProvider = tempProvider;
   const selectedModel = data.modelId || "";
   const availableModels = selectedProvider ? modelsByProvider[selectedProvider] || [] : [];
 
@@ -68,7 +73,6 @@ export function ConfigurationPanel({ node, onNodeChange, onClose }: Configuratio
   const agentType = data.type || "";
 
   // Immediate node-updating handlers for all fields
-
   const updateConfig = (key: string, value: any) => {
     onNodeChange(prev => ({
       ...prev,
@@ -103,6 +107,9 @@ export function ConfigurationPanel({ node, onNodeChange, onClose }: Configuratio
   };
 
   const updateProvider = (provider: string) => {
+    // Update local state first
+    setTempProvider(provider);
+    
     // Clear modelId, user must re-select model for provider
     onNodeChange(prev => ({
       ...prev,
@@ -298,5 +305,3 @@ export function ConfigurationPanel({ node, onNodeChange, onClose }: Configuratio
     </div>
   );
 }
-
-// NOTE: This file now exceeds 250 lines and should be refactored into smaller components.
