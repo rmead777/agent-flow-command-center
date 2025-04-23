@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { useNodesState, useEdgesState, addEdge, Connection, NodeMouseHandler, Node } from '@xyflow/react';
 import { FlowToolbar } from './FlowToolbar';
@@ -12,6 +11,9 @@ import { runSimulatedFlow } from '@/flow/MockRunner';
 import { FlowNode } from '@/flow/types';
 import { addFlowOutputsToHistory } from '@/data/logData';
 import { loadFromLocalStorage } from './helpers';
+import { SaveAsWorkflowDialog } from "./SaveAsWorkflowDialog";
+import { LoadWorkflowDialog } from "./LoadWorkflowDialog";
+import { saveUserFlow, loadUserFlow } from "@/data/workflowStorage";
 
 interface AgentNodeData {
   label: string;
@@ -64,6 +66,10 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
   const [isExecuting, setIsExecuting] = useState(false);
   const [flowOutputs, setFlowOutputs] = useState<FlowOutput[]>([]);
   const [showOutputPanel, setShowOutputPanel] = useState(false);
+  const [workflowDialogOpen, setWorkflowDialogOpen] = useState(false);
+  const [loadDialogOpen, setLoadDialogOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [activeWorkflow, setActiveWorkflow] = useState<{ name: string; id: string } | null>(null);
 
   useImperativeHandle(ref, () => ({
     runFlow: () => handleExecuteFlow(),
@@ -116,11 +122,37 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
   }, []);
 
   function handleSaveFlow() {
-    localStorage.setItem(LOCALSTORAGE_NODES_KEY, JSON.stringify(nodes));
-    localStorage.setItem(LOCALSTORAGE_EDGES_KEY, JSON.stringify(edges));
+    setWorkflowDialogOpen(true);
+  }
+
+  async function doSaveWorkflow(name: string) {
+    setSaving(true);
+    const { success, error, id } = await saveUserFlow(name, nodes, edges, activeWorkflow?.id);
+    setSaving(false);
+    if (success) {
+      setActiveWorkflow({ name, id: id! });
+      toast({
+        title: "Workflow Saved",
+        description: `Your workflow "${name}" was saved.`
+      });
+    } else {
+      toast({
+        title: "Save Failed",
+        description: error || "Failed to save workflow.",
+        variant: "destructive"
+      });
+    }
+  }
+
+  const handleLoadWorkflow = () => setLoadDialogOpen(true);
+
+  async function onLoadWorkflow(flow: any) {
+    setNodes(flow.nodes);
+    setEdges(flow.edges);
+    setActiveWorkflow({ name: flow.name, id: flow.id });
     toast({
-      title: 'Flow Saved',
-      description: 'Your AI workflow was saved to your browser.',
+      title: "Workflow Loaded",
+      description: `Loaded "${flow.name}".`
     });
   }
 
@@ -330,7 +362,6 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     setShowOutputPanel(!showOutputPanel);
   };
 
-  // Extracted toolbar functions
   const handleAutoLayout = () =>
     toast({ title: "Auto Layout", description: "This will be implemented soon!" });
 
@@ -346,7 +377,7 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
           onConnect={onConnect}
           onNodeClick={onNodeClick}
         >
-          <div className="absolute top-2 right-2 z-10">
+          <div className="absolute top-2 right-2 z-10 flex gap-2">
             <FlowToolbar
               onAddNode={handleAddNode}
               onAutoLayout={handleAutoLayout}
@@ -364,6 +395,9 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
               showOutputPanel={showOutputPanel}
               flowOutputsLength={flowOutputs.length}
             />
+            <Button variant="outline" className="text-gray-300 px-3 py-1" onClick={handleLoadWorkflow}>
+              Load Workflow
+            </Button>
           </div>
         </FlowGraph>
 
@@ -396,8 +430,19 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
         isVisible={showOutputPanel}
         onClose={() => setShowOutputPanel(false)}
       />
+
+      <SaveAsWorkflowDialog
+        open={workflowDialogOpen}
+        onClose={() => setWorkflowDialogOpen(false)}
+        onSave={doSaveWorkflow}
+        defaultName={activeWorkflow?.name || "My Workflow"}
+      />
+      <LoadWorkflowDialog
+        open={loadDialogOpen}
+        onClose={() => setLoadDialogOpen(false)}
+        onLoad={onLoadWorkflow}
+      />
     </div>
   );
 });
 FlowView.displayName = "FlowView";
-
