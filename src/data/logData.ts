@@ -1,5 +1,6 @@
 
 // Sample log data for the logs view
+import { FlowOutput } from "@/components/flow/FlowOutputPanel";
 
 export const logs = [
   {
@@ -143,3 +144,35 @@ export const logs = [
     details: 'New session started with query: "What are the benefits of using multiple specialized agents instead of a single large model?"',
   },
 ];
+
+// Store flow execution outputs for historical reference
+export let flowOutputs: FlowOutput[] = [];
+
+// Add new flow outputs to the log history
+export function addFlowOutputsToHistory(outputs: FlowOutput[]) {
+  flowOutputs = [...outputs, ...flowOutputs].slice(0, 100); // Keep last 100 outputs
+  
+  // Also add summary entries to the general logs
+  const timestamp = new Date().toISOString();
+  
+  logs.unshift({
+    id: `flow-run-${Date.now()}`,
+    timestamp: timestamp.replace('T', ' ').substring(0, 19),
+    agentName: 'Flow Engine',
+    eventType: 'info',
+    details: `Completed flow execution with ${outputs.length} node outputs`,
+  });
+  
+  // Add individual node outputs as log entries for errors
+  outputs.forEach(output => {
+    if (output.nodeType === 'error' || output.output.toString().toLowerCase().includes('error')) {
+      logs.unshift({
+        id: `node-${output.nodeId}-${Date.now()}`,
+        timestamp: output.timestamp.replace('T', ' ').substring(0, 19),
+        agentName: output.nodeName,
+        eventType: 'error',
+        details: `Error in node execution: ${typeof output.output === 'object' ? JSON.stringify(output.output) : output.output}`,
+      });
+    }
+  });
+}

@@ -15,12 +15,14 @@ import {
 import '@xyflow/react/dist/style.css';
 import { AgentNode } from '@/components/flow/AgentNode';
 import { ConfigurationPanel } from '@/components/flow/ConfigurationPanel';
+import { FlowOutputPanel, FlowOutput } from '@/components/flow/FlowOutputPanel';
 import { initialNodes, initialEdges } from '@/data/flowData';
 import { validateBeforeExecution } from '@/utils/modelValidation';
 import { toast } from '@/components/ui/use-toast';
 import { runSimulatedFlow } from '@/flow/MockRunner';
 import { FlowNode } from '@/flow/types';
-import { Plus, Save, Play, Code, Settings } from 'lucide-react';
+import { Plus, Save, Play, Code, Settings, ChevronUp, ChevronDown } from 'lucide-react';
+import { addFlowOutputsToHistory } from '@/data/logData';
 
 interface AgentNodeData {
   label: string;
@@ -56,6 +58,7 @@ const nodeTypes = {
 
 const LOCALSTORAGE_NODES_KEY = "ai_flow_nodes";
 const LOCALSTORAGE_EDGES_KEY = "ai_flow_edges";
+const LOCALSTORAGE_OUTPUTS_KEY = "ai_flow_last_outputs";
 
 function loadFromLocalStorage<T>(key: string, fallback: T): T {
   try {
@@ -86,6 +89,8 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [isValidated, setIsValidated] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
+  const [flowOutputs, setFlowOutputs] = useState<FlowOutput[]>([]);
+  const [showOutputPanel, setShowOutputPanel] = useState(false);
 
   useImperativeHandle(ref, () => ({
     runFlow: () => handleExecuteFlow(),
@@ -125,6 +130,17 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     const isValid = validateBeforeExecution(nodes);
     setIsValidated(isValid);
   }, [nodes]);
+
+  useEffect(() => {
+    try {
+      const savedOutputs = localStorage.getItem(LOCALSTORAGE_OUTPUTS_KEY);
+      if (savedOutputs) {
+        setFlowOutputs(JSON.parse(savedOutputs));
+      }
+    } catch (error) {
+      console.error("Failed to load saved outputs:", error);
+    }
+  }, []);
 
   function handleSaveFlow() {
     localStorage.setItem(LOCALSTORAGE_NODES_KEY, JSON.stringify(nodes));
@@ -187,6 +203,7 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
       }
     }
     setIsExecuting(true);
+    setFlowOutputs([]); // Clear previous outputs
 
     setNodes(currentNodes =>
       currentNodes.map(node => ({
@@ -215,7 +232,10 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
             id: node.id,
             type: nodeData.type as "input" | "model" | "action" | "output",
             modelId: nodeData.modelId || undefined,
-            config: nodeData.config,
+            config: {
+              ...nodeData.config,
+              label: nodeData.label // Add label to config for reference
+            },
             inputNodeIds: edges
               .filter(edge => edge.target === node.id)
               .map(edge => edge.source)
@@ -226,15 +246,35 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
         await runSimulatedFlow(flowNodes, mockInput)
           .then(results => {
             console.log("Flow execution results:", results);
+            
+            // Update node metrics with execution data
             setNodes(currentNodes =>
-              currentNodes.map(node => ({
-                ...node,
-                data: {
-                  ...(node.data as AgentNodeData),
-                  status: 'idle'
-                }
-              }))
+              currentNodes.map(node => {
+                const nodeOutput = results.outputs.find(output => output.nodeId === node.id);
+                return {
+                  ...node,
+                  data: {
+                    ...(node.data as AgentNodeData),
+                    status: 'idle',
+                    metrics: {
+                      ...(node.data as AgentNodeData).metrics,
+                      tasksProcessed: ((node.data as AgentNodeData).metrics?.tasksProcessed || 0) + 1,
+                      latency: nodeOutput?.executionTime || 0,
+                      errorRate: 0
+                    }
+                  }
+                };
+              })
             );
+            
+            // Store and show the outputs
+            setFlowOutputs(results.outputs);
+            setShowOutputPanel(true);
+            
+            // Save outputs to history and localStorage
+            addFlowOutputsToHistory(results.outputs);
+            localStorage.setItem(LOCALSTORAGE_OUTPUTS_KEY, JSON.stringify(results.outputs));
+            
             toast({
               title: "Flow Execution Completed",
               description: "Mock simulation has finished successfully",
@@ -314,105 +354,127 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     }
   }, []);
 
+  const toggleOutputPanel = () => {
+    setShowOutputPanel(!showOutputPanel);
+  };
+
   return (
-    <div className="h-full w-full rounded-lg border border-gray-800 bg-gray-900">
-      <div className="flex h-full">
-        <div className="flex-1">
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onNodeClick={onNodeClick}
-            nodeTypes={nodeTypes}
-            fitView
-            className="bg-[#0F0F1A]"
-            defaultEdgeOptions={{ animated: true }}
-          >
-            <Controls className="bg-gray-800 text-white" />
-            <MiniMap 
-              nodeColor={(node) => {
-                const nodeData = node.data as AgentNodeData;
-                switch (nodeData.type) {
-                  case 'input':
-                    return '#6366f1';
-                  case 'action':
-                    return '#8b5cf6';
-                  case 'response':
-                    return '#10b981';
-                  default:
-                    return '#64748b';
-                }
-              }}
-              maskColor="rgba(15, 15, 26, 0.8)"
-              className="bg-gray-800"
-            />
-            <Background color="#333" gap={16} />
-            <Panel position="top-right" className="bg-gray-900/80 backdrop-blur-sm p-2 rounded-md border border-gray-800">
-              <div className="flex gap-2">
-                <button
-                  className="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 text-xs rounded flex items-center gap-1"
-                  onClick={handleAddNode}
-                  title="Add Node"
-                >
-                  <Plus size={16} className="inline" />
-                  Add Node
-                </button>
-                <button
-                  className="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 text-xs rounded flex items-center gap-1"
-                  onClick={() => toast({ title: "Auto Layout", description: "This will be implemented soon!" })}
-                  title="Auto Layout"
-                >
-                  Auto Layout
-                </button>
-                <button 
-                  className={`${isValidated ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600'} 
-                    text-white px-2 py-1 text-xs rounded flex items-center gap-1 ${isExecuting ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  onClick={handleExecuteFlow}
-                  disabled={isExecuting}
-                  title="Run Flow"
-                >
-                  <Play size={16} className="inline" />
-                  {isExecuting ? 'Executing...' : 'Execute Flow'}
-                </button>
-                <button
-                  className="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 text-xs rounded flex items-center gap-1"
-                  onClick={handleSaveFlow}
-                  title="Save Flow"
-                >
-                  <Save size={16} className="inline" />
-                  Save
-                </button>
-                <button
-                  className="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 text-xs rounded flex items-center gap-1"
-                  onClick={() => toast({ title: "Code View", description: "Code export not implemented yet." })}
-                  title="Export"
-                >
-                  <Code size={16} className="inline" />
-                  Code
-                </button>
-                <button
-                  className="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 text-xs rounded flex items-center gap-1"
-                  onClick={() => toast({ title: "Settings", description: "Settings panel not implemented yet." })}
-                  title="Settings"
-                >
-                  <Settings size={16} className="inline" />
-                  Settings
-                </button>
-              </div>
-            </Panel>
-          </ReactFlow>
-        </div>
-        {selectedNode && selectedNodeData && (
-          <ConfigurationPanel 
-            node={selectedNodeData as Node<AgentNodeData>}
-            onNodeChange={(updater) => updateNodeData(selectedNode, updater)}
-            onClose={() => setSelectedNode(null)}
-            onDeleteNode={handleDeleteNode}
+    <div className="h-full w-full rounded-lg border border-gray-800 bg-gray-900 flex flex-col">
+      <div className="flex-1 relative">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onNodeClick={onNodeClick}
+          nodeTypes={nodeTypes}
+          fitView
+          className="bg-[#0F0F1A]"
+          defaultEdgeOptions={{ animated: true }}
+        >
+          <Controls className="bg-gray-800 text-white" />
+          <MiniMap 
+            nodeColor={(node) => {
+              const nodeData = node.data as AgentNodeData;
+              switch (nodeData.type) {
+                case 'input':
+                  return '#6366f1';
+                case 'action':
+                  return '#8b5cf6';
+                case 'response':
+                  return '#10b981';
+                default:
+                  return '#64748b';
+              }
+            }}
+            maskColor="rgba(15, 15, 26, 0.8)"
+            className="bg-gray-800"
           />
-        )}
+          <Background color="#333" gap={16} />
+          <Panel position="top-right" className="bg-gray-900/80 backdrop-blur-sm p-2 rounded-md border border-gray-800">
+            <div className="flex gap-2">
+              <button
+                className="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 text-xs rounded flex items-center gap-1"
+                onClick={handleAddNode}
+                title="Add Node"
+              >
+                <Plus size={16} className="inline" />
+                Add Node
+              </button>
+              <button
+                className="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 text-xs rounded flex items-center gap-1"
+                onClick={() => toast({ title: "Auto Layout", description: "This will be implemented soon!" })}
+                title="Auto Layout"
+              >
+                Auto Layout
+              </button>
+              <button 
+                className={`${isValidated ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600'} 
+                  text-white px-2 py-1 text-xs rounded flex items-center gap-1 ${isExecuting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                onClick={handleExecuteFlow}
+                disabled={isExecuting}
+                title="Run Flow"
+              >
+                <Play size={16} className="inline" />
+                {isExecuting ? 'Executing...' : 'Execute Flow'}
+              </button>
+              <button
+                className="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 text-xs rounded flex items-center gap-1"
+                onClick={handleSaveFlow}
+                title="Save Flow"
+              >
+                <Save size={16} className="inline" />
+                Save
+              </button>
+              <button
+                className="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 text-xs rounded flex items-center gap-1"
+                onClick={() => toast({ title: "Code View", description: "Code export not implemented yet." })}
+                title="Export"
+              >
+                <Code size={16} className="inline" />
+                Code
+              </button>
+              <button
+                className="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 text-xs rounded flex items-center gap-1"
+                onClick={() => toast({ title: "Settings", description: "Settings panel not implemented yet." })}
+                title="Settings"
+              >
+                <Settings size={16} className="inline" />
+                Settings
+              </button>
+              {flowOutputs.length > 0 && (
+                <button
+                  className="bg-blue-700 hover:bg-blue-600 text-white px-2 py-1 text-xs rounded flex items-center gap-1"
+                  onClick={toggleOutputPanel}
+                  title={showOutputPanel ? "Hide Outputs" : "Show Outputs"}
+                >
+                  {showOutputPanel ? 
+                    <ChevronDown size={16} className="inline" /> : 
+                    <ChevronUp size={16} className="inline" />
+                  }
+                  Outputs
+                </button>
+              )}
+            </div>
+          </Panel>
+        </ReactFlow>
       </div>
+      
+      <FlowOutputPanel 
+        outputs={flowOutputs} 
+        isVisible={showOutputPanel} 
+        onClose={() => setShowOutputPanel(false)} 
+      />
+      
+      {selectedNode && selectedNodeData && (
+        <ConfigurationPanel 
+          node={selectedNodeData as Node<AgentNodeData>}
+          onNodeChange={(updater) => updateNodeData(selectedNode, updater)}
+          onClose={() => setSelectedNode(null)}
+          onDeleteNode={handleDeleteNode}
+        />
+      )}
     </div>
   );
 });
