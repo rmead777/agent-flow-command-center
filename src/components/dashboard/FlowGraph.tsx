@@ -12,14 +12,20 @@ import {
   Edge
 } from "@xyflow/react";
 import { AgentNode } from "@/components/flow/AgentNode";
-import { InputPromptNode } from "@/components/flow/InputPromptNode"; // NEW
+import { InputPromptNode } from "@/components/flow/InputPromptNode"; 
 
-import "@xyflow/react/dist/style.css"; // Add missing CSS import
+import "@xyflow/react/dist/style.css"; 
 
-interface AgentNodeData {
+// Define base common properties
+interface BaseNodeData {
   label: string;
   type: string;
   status?: "active" | "idle" | "error";
+  [key: string]: any;
+}
+
+// Agent specific properties
+interface AgentNodeData extends BaseNodeData {
   metrics?: {
     tasksProcessed: number;
     latency: number;
@@ -34,21 +40,29 @@ interface AgentNodeData {
     retryOnError?: boolean;
     [key: string]: any;
   };
-  [key: string]: any;
 }
+
+// Input prompt specific properties
+interface InputPromptNodeData extends BaseNodeData {
+  prompt?: string;
+  onPromptChange?: (prompt: string) => void;
+}
+
+// Union type to handle both kinds of nodes
+type FlowNodeData = AgentNodeData | InputPromptNodeData;
 
 const nodeTypes = {
   agent: AgentNode,
-  inputPrompt: InputPromptNode, // Register the new node type
+  inputPrompt: InputPromptNode,
 };
 
 interface FlowGraphProps {
-  nodes: Node<AgentNodeData>[];
+  nodes: Node<FlowNodeData>[];
   edges: Edge[];
   onNodesChange: any;
   onEdgesChange: any;
   onConnect: (params: Connection) => void;
-  onNodeClick: NodeMouseHandler<Node<AgentNodeData>>;
+  onNodeClick: NodeMouseHandler<Node<FlowNodeData>>;
   children?: React.ReactNode;
 }
 
@@ -76,7 +90,7 @@ export const FlowGraph: React.FC<FlowGraphProps> = ({
     <Controls className="bg-gray-800 text-white" />
     <MiniMap
       nodeColor={(node) => {
-        const nodeData = node.data as AgentNodeData;
+        const nodeData = node.data as FlowNodeData;
         switch (nodeData.type) {
           case "input":
             return "#6366f1";

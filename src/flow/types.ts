@@ -1,7 +1,7 @@
 
 export interface FlowNode {
   id: string;
-  type: "input" | "model" | "action" | "output";
+  type: "input" | "model" | "action" | "output" | "inputPrompt";
   modelId?: string;
   config?: {
     systemPrompt?: string;
@@ -12,4 +12,5 @@ export interface FlowNode {
     [key: string]: any;
   };
   inputNodeIds?: string[];
+  prompt?: string;
 }

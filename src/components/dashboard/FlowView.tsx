@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { useNodesState, useEdgesState, addEdge, Connection, NodeMouseHandler, Node } from '@xyflow/react';
 import { FlowToolbar } from './FlowToolbar';
@@ -37,6 +38,20 @@ interface AgentNodeData {
   [key: string]: any;
 }
 
+// New interface for InputPromptNode data
+interface InputPromptNodeData {
+  prompt?: string;
+  onPromptChange?: (prompt: string) => void;
+  // Adding required AgentNodeData properties to make it compatible
+  label: string;
+  type: string;
+  status?: 'active' | 'idle' | 'error';
+  [key: string]: any;
+}
+
+// Union type to handle both kinds of nodes
+type FlowNodeData = AgentNodeData | InputPromptNodeData;
+
 export interface FlowViewHandle {
   runFlow: () => void;
   saveFlow: () => void;
@@ -49,15 +64,15 @@ const LOCALSTORAGE_EDGES_KEY = "ai_flow_edges";
 const LOCALSTORAGE_OUTPUTS_KEY = "ai_flow_last_outputs";
 
 export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
-  const typedInitialNodes: Node<AgentNodeData>[] = initialNodes.map(node => ({
+  const typedInitialNodes: Node<FlowNodeData>[] = initialNodes.map(node => ({
     ...node,
     data: {
       ...node.data,
-    } as AgentNodeData,
+    } as FlowNodeData,
   }));
 
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node<AgentNodeData>>(
-    loadFromLocalStorage<Node<AgentNodeData>[]>(LOCALSTORAGE_NODES_KEY, typedInitialNodes)
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node<FlowNodeData>>(
+    loadFromLocalStorage<Node<FlowNodeData>[]>(LOCALSTORAGE_NODES_KEY, typedInitialNodes)
   );
   const [edges, setEdges, onEdgesChange] = useEdgesState(
     loadFromLocalStorage(LOCALSTORAGE_EDGES_KEY, initialEdges)
@@ -95,7 +110,7 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     [setEdges]
   );
 
-  const onNodeClick: NodeMouseHandler<Node<AgentNodeData>> = useCallback((_, node) => {
+  const onNodeClick: NodeMouseHandler<Node<FlowNodeData>> = useCallback((_, node) => {
     setSelectedNode(node.id);
   }, []);
 
@@ -103,7 +118,7 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     ? nodes.find(n => n.id === selectedNode)
     : null;
 
-  const updateNodeData = useCallback((nodeId: string, updater: (n: Node<AgentNodeData>) => Node<AgentNodeData>) => {
+  const updateNodeData = useCallback((nodeId: string, updater: (n: Node<FlowNodeData>) => Node<FlowNodeData>) => {
     setNodes((ns) => ns.map(n => (n.id === nodeId ? updater(n) : n)));
   }, [setNodes]);
 
@@ -174,9 +189,12 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
           type: "inputPrompt",
           position: pos,
           data: {
+            label: "User Prompt",
+            type: "input",
+            status: "idle",
             prompt: workflowPrompt,
             onPromptChange: (p: string) => setWorkflowPrompt(p)
-          }
+          } as InputPromptNodeData
         }
       ]);
       toast({
@@ -207,7 +225,7 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
             streamResponse: true,
             retryOnError: true,
           }
-        }
+        } as AgentNodeData
       }
     ]);
     toast({
