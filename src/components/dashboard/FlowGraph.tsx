@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   ReactFlow,
@@ -22,6 +23,7 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { X } from "lucide-react";
 
 import "@xyflow/react/dist/style.css";
 
@@ -75,52 +77,40 @@ interface FlowGraphProps {
 function DeletableEdge(props: EdgeProps) {
   const { id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, markerEnd, style } = props;
   const { setEdges } = useReactFlow();
-  const [showMenu, setShowMenu] = React.useState(false);
-  const [menuPos, setMenuPos] = React.useState<{ x: number; y: number } | null>(null);
-
-  const onContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setMenuPos({ x: e.clientX, y: e.clientY });
-    setShowMenu(true);
-  };
+  
+  const edgePath = `M${sourceX},${sourceY} C${sourceX + 50},${sourceY} ${targetX - 50},${targetY} ${targetX},${targetY}`;
+  const midX = (sourceX + targetX) / 2;
+  const midY = (sourceY + targetY) / 2;
 
   const handleDelete = () => {
-    setShowMenu(false);
     setEdges((edges: Edge[]) => edges.filter((edge) => edge.id !== id));
   };
 
   return (
     <>
-      <g onContextMenu={onContextMenu}>
-        <path
-          className="react-flow__edge-path"
-          d={`
-            M${sourceX},${sourceY} C${sourceX + 50},${sourceY} ${targetX - 50},${targetY} ${targetX},${targetY}
-          `}
-          markerEnd={markerEnd}
-          style={style}
-        />
-      </g>
-      {showMenu && menuPos && (
+      <path
+        className="react-flow__edge-path"
+        d={edgePath}
+        markerEnd={markerEnd}
+        style={style}
+      />
+      <EdgeLabelRenderer>
         <div
           style={{
-            position: "fixed",
-            top: menuPos.y,
-            left: menuPos.x,
-            zIndex: 9999,
-            background: "#222",
-            borderRadius: "0.375rem",
-            padding: "0.5rem 1rem",
-            color: "#fff",
-            cursor: "pointer",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.4)"
+            position: 'absolute',
+            transform: `translate(-50%, -50%) translate(${midX}px,${midY}px)`,
+            pointerEvents: 'all',
+            zIndex: 1000
           }}
-          onClick={handleDelete}
-          onMouseLeave={() => setShowMenu(false)}
         >
-          Delete Connection
+          <button
+            className="flex items-center justify-center w-5 h-5 bg-gray-700 text-white rounded-full border border-gray-500 hover:bg-red-600 transition-colors"
+            onClick={handleDelete}
+          >
+            <X size={12} />
+          </button>
         </div>
-      )}
+      </EdgeLabelRenderer>
     </>
   );
 }

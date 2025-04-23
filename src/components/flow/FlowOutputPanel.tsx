@@ -49,6 +49,33 @@ export function FlowOutputPanel({ outputs, isVisible, onClose, title = "Flow Exe
     document.body.removeChild(link);
   };
 
+  // Helper function to extract clean text from API responses
+  const extractCleanText = (data: any): string => {
+    if (typeof data === 'string') return data;
+    
+    if (data && typeof data === 'object') {
+      // Check for common API response patterns
+      if (data.output) {
+        return typeof data.output === 'string' ? data.output : JSON.stringify(data.output);
+      }
+      if (data.content) {
+        return typeof data.content === 'string' ? data.content : JSON.stringify(data.content);
+      }
+      if (data.text) {
+        return typeof data.text === 'string' ? data.text : JSON.stringify(data.text);
+      }
+      if (data.message?.content) {
+        return data.message.content;
+      }
+      if (data.choices?.[0]?.message?.content) {
+        return data.choices[0].message.content;
+      }
+    }
+    
+    // Fallback to string representation if we couldn't extract clean text
+    return typeof data === 'object' ? JSON.stringify(data) : String(data);
+  };
+
   return (
     <Card className="border-t border-gray-800 bg-gray-900 text-white overflow-hidden">
       <div className="flex items-center justify-between p-3 border-b border-gray-800">
@@ -126,19 +153,15 @@ export function FlowOutputPanel({ outputs, isVisible, onClose, title = "Flow Exe
                   <div className="p-3 bg-gray-900 space-y-3">
                     <div>
                       <h4 className="text-sm font-medium text-gray-400 mb-1">Input:</h4>
-                      <pre className="p-2 bg-gray-800 rounded-md text-xs overflow-x-auto">
-                        {typeof output.input === 'object' 
-                          ? JSON.stringify(output.input, null, 2) 
-                          : output.input}
-                      </pre>
+                      <div className="p-2 bg-gray-800 rounded-md text-xs overflow-x-auto whitespace-pre-wrap">
+                        {extractCleanText(output.input)}
+                      </div>
                     </div>
                     <div>
                       <h4 className="text-sm font-medium text-gray-400 mb-1">Output:</h4>
-                      <pre className="p-2 bg-gray-800 rounded-md text-xs overflow-x-auto">
-                        {typeof output.output === 'object' 
-                          ? JSON.stringify(output.output, null, 2) 
-                          : output.output}
-                      </pre>
+                      <div className="p-2 bg-gray-800 rounded-md text-xs overflow-x-auto whitespace-pre-wrap">
+                        {extractCleanText(output.output)}
+                      </div>
                     </div>
                   </div>
                 </CollapsibleContent>
