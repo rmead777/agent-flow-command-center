@@ -7,6 +7,7 @@ import { CohereAdapter } from "./CohereAdapter";
 import { XAIAdapter } from "./XAIAdapter";
 import { DeepSeekAdapter } from "./DeepSeekAdapter";
 import { MockAdapter } from "./MockAdapter";
+import { PerplexityAdapter } from "./PerplexityAdapter";
 
 // Register all provider models
 export const adapterRegistry: Record<string, ModelAdapter> = {
@@ -59,6 +60,9 @@ export const adapterRegistry: Record<string, ModelAdapter> = {
   
   // Mock Model
   "mock-model": new MockAdapter(),
+  
+  // Perplexity Models
+  "sonar-pro": new PerplexityAdapter("sonar-pro"),
 };
 
 // Utility function to get all available models by provider

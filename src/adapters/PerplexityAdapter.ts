@@ -1,0 +1,54 @@
+
+import { ModelAdapter } from "./ModelAdapter";
+
+export class PerplexityAdapter implements ModelAdapter {
+  modelName: string;
+  providerName = "Perplexity";
+  supportedFeatures = ["text", "web_search"];
+
+  constructor(modelName = "sonar-pro") {
+    this.modelName = modelName;
+  }
+
+  buildRequest(input: string, config: any) {
+    return {
+      model: "llama-3.1-sonar-small-128k-online",
+      messages: [
+        { role: "system", content: config.systemPrompt || "You are helpful." },
+        { role: "user", content: input }
+      ],
+      temperature: config.temperature ?? 0.7,
+      max_tokens: config.maxTokens ?? 1000,
+      top_p: 0.9,
+      return_images: false,
+      return_related_questions: false,
+      frequency_penalty: 1,
+      presence_penalty: 0
+    };
+  }
+
+  parseResponse(response: any) {
+    return {
+      output: response.choices?.[0]?.message?.content || "",
+      usage: response.usage || {},
+      raw: response
+    };
+  }
+
+  validateConfig(config: any) {
+    return (
+      typeof config === 'object' && 
+      (config.temperature === undefined || (typeof config.temperature === "number" && config.temperature >= 0 && config.temperature <= 1)) &&
+      (config.maxTokens === undefined || (typeof config.maxTokens === "number" && config.maxTokens > 0))
+    );
+  }
+
+  getDefaultConfig() {
+    return {
+      temperature: 0.7,
+      maxTokens: 1000,
+      systemPrompt: "You are a helpful assistant.",
+      enableWebSearch: true
+    };
+  }
+}

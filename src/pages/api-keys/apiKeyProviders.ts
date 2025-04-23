@@ -1,4 +1,3 @@
-
 export const PROVIDERS = [
   {
     name: 'OpenAI',
@@ -67,11 +66,16 @@ export const PROVIDERS = [
       'DeepSeek-V3-0324'
     ]
   },
-  // Add Mock provider for simulation/testing
   {
     name: 'Mock',
     models: [
       'mock-model'
+    ]
+  },
+  {
+    name: 'Perplexity',
+    models: [
+      'sonar-pro'
     ]
   },
 ];
