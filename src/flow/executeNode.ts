@@ -1,4 +1,3 @@
-
 import { FlowNode } from "./types";
 import { getAdapter } from "../adapters/adapterRegistry";
 import { toast } from "@/components/ui/use-toast";
@@ -57,6 +56,7 @@ export async function executeNode(node: FlowNode, input: any): Promise<any> {
   
   try {
     console.log(`Executing node ${node.id} with input:`, input);
+    console.log(`Node config:`, config);
     
     // Process input - ensure it's a string
     let processedInput = input;

@@ -333,10 +333,12 @@ export const FlowView = forwardRef<FlowViewHandle, FlowViewProps>(({ masterUserP
                   nodeId: node.id,
                   nodeName: node.config?.label || `Node ${node.id}`,
                   nodeType: node.type,
+                  modelId: node.modelId,
                   timestamp: new Date().toISOString(),
                   input: inputs.length > 0 ? inputs : null,
                   output: promptValue,
-                  executionTime
+                  executionTime,
+                  config: node.config
                 });
 
                 return { nodeId: node.id, success: true };
@@ -357,7 +359,8 @@ export const FlowView = forwardRef<FlowViewHandle, FlowViewProps>(({ masterUserP
                 timestamp: new Date().toISOString(),
                 input: inputs.length === 1 ? inputs[0] : inputs,
                 output: result,
-                executionTime
+                executionTime,
+                config: node.config
               });
 
               return { nodeId: node.id, success: true };

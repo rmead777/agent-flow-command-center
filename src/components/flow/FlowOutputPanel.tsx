@@ -116,7 +116,7 @@ export function FlowOutputPanel({ outputs, isVisible, onClose, title = "Flow Exe
               const nodeKey = `${output.nodeId}-${index}`;
               const isExpanded = expandedNodes[nodeKey] || false;
               
-              // Extract system prompt if available
+              // Get system prompt directly from the output object
               const systemPrompt = output.config?.systemPrompt || '';
 
               return (
