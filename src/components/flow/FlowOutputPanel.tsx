@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
@@ -16,6 +15,10 @@ export interface FlowOutput {
   input: any;
   output: any;
   executionTime?: number;
+  config?: {
+    systemPrompt?: string;
+    [key: string]: any;
+  };
 }
 
 interface FlowOutputPanelProps {
@@ -25,35 +28,26 @@ interface FlowOutputPanelProps {
   title?: string;
 }
 
-// Helper function: extract only the main text output from typical model API responses
-function extractCleanText(data: any): string {
-  if (typeof data === 'string') {
-    return data;
-  }
-  if (data && typeof data === 'object') {
-    // If output looks like a model response object, parse "output", "content", or the OpenAI message content
-    if (typeof data.output === 'string') return data.output;
-    if (typeof data.content === 'string') return data.content;
-    // OpenAI
-    if (data.message && typeof data.message.content === 'string') return data.message.content;
-    // OpenAI chat completion response
-    if (data.choices?.[0]?.message?.content) return data.choices[0].message.content;
-    // Sometimes direct 'text'
-    if (typeof data.text === 'string') return data.text;
-  }
-  return typeof data === 'object' ? JSON.stringify(data) : String(data);
+function extractJustOutputText(data: any): string {
+  if (!data) return '';
+  if (typeof data === 'string') return data;
+  if (typeof data === 'object' && typeof data.output === 'string') return data.output;
+  if (data.choices?.[0]?.message?.content) return data.choices[0].message.content;
+  if (typeof data.content === 'string') return data.content;
+  if (typeof data.text === 'string') return data.text;
+  return '';
 }
 
-// For arrays of input data: only show their main "output" text
 function extractInputSummaries(input: any): string {
   if (Array.isArray(input)) {
-    // Flatten: just the clean output for each input object (or string if not an obj)
-    const texts = input.map(item => extractCleanText(item));
-    return texts.join('\n---\n');
+    return input.map(item => extractJustOutputText(item)).filter(Boolean).join('\n---\n');
   } else {
-    // Show just the output string if available
-    return extractCleanText(input);
+    return extractJustOutputText(input);
   }
+}
+
+function extractCleanText(data: any): string {
+  return extractJustOutputText(data) || (typeof data === 'object' ? JSON.stringify(data) : String(data));
 }
 
 export function FlowOutputPanel({ outputs, isVisible, onClose, title = "Flow Execution Results" }: FlowOutputPanelProps) {
@@ -61,10 +55,10 @@ export function FlowOutputPanel({ outputs, isVisible, onClose, title = "Flow Exe
 
   if (!isVisible) return null;
 
-  const toggleNodeExpansion = (nodeId: string) => {
+  const toggleNodeExpansion = (nodeKey: string) => {
     setExpandedNodes(prev => ({
       ...prev,
-      [nodeId]: !prev[nodeId]
+      [nodeKey]: !prev[nodeKey]
     }));
   };
 
@@ -117,64 +111,78 @@ export function FlowOutputPanel({ outputs, isVisible, onClose, title = "Flow Exe
           </div>
         ) : (
           <div className="space-y-3">
-            {outputs.map((output, index) => (
-              <Collapsible 
-                key={`${output.nodeId}-${index}`}
-                open={expandedNodes[`${output.nodeId}-${index}`]} 
-                onOpenChange={() => toggleNodeExpansion(`${output.nodeId}-${index}`)}
-                className="border border-gray-800 rounded-md overflow-hidden"
-              >
-                <CollapsibleTrigger asChild>
-                  <div className="flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-800 cursor-pointer">
-                    <div className="flex items-center">
-                      {expandedNodes[`${output.nodeId}-${index}`] ? 
-                        <ChevronDown className="h-4 w-4 mr-2 text-gray-400" /> : 
-                        <ChevronRight className="h-4 w-4 mr-2 text-gray-400" />
-                      }
-                      <div className="flex flex-col">
-                        <span className="font-medium">{output.nodeName}</span>
-                        <div className="flex gap-2 text-xs text-gray-400">
-                          <span>{output.timestamp}</span>
-                          {output.executionTime && (
-                            <span>{output.executionTime}ms</span>
-                          )}
+            {outputs.map((output, index) => {
+              const systemPrompt =
+                typeof output.config === 'object' && typeof output.config.systemPrompt === 'string'
+                  ? output.config.systemPrompt.trim()
+                  : undefined;
+
+              return (
+                <Collapsible 
+                  key={`${output.nodeId}-${index}`}
+                  open={expandedNodes[`${output.nodeId}-${index}`]} 
+                  onOpenChange={() => toggleNodeExpansion(`${output.nodeId}-${index}`)}
+                  className="border border-gray-800 rounded-md overflow-hidden"
+                >
+                  <CollapsibleTrigger asChild>
+                    <div className="flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-800 cursor-pointer">
+                      <div className="flex items-center">
+                        {expandedNodes[`${output.nodeId}-${index}`] ? 
+                          <ChevronDown className="h-4 w-4 mr-2 text-gray-400" /> : 
+                          <ChevronRight className="h-4 w-4 mr-2 text-gray-400" />
+                        }
+                        <div className="flex flex-col">
+                          <span className="font-medium">{output.nodeName}</span>
+                          <div className="flex gap-2 text-xs text-gray-400">
+                            <span>{output.timestamp}</span>
+                            {output.executionTime && (
+                              <span>{output.executionTime}ms</span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Badge variant="outline" className="capitalize bg-gray-700">
-                        {output.nodeType}
-                      </Badge>
-                      {output.modelId && (
-                        <Badge variant="secondary" className="bg-purple-900/50 text-purple-200">
-                          {output.modelId}
+                      <div className="flex gap-2">
+                        <Badge variant="outline" className="capitalize bg-gray-700">
+                          {output.nodeType}
                         </Badge>
+                        {output.modelId && (
+                          <Badge variant="secondary" className="bg-purple-900/50 text-purple-200">
+                            {output.modelId}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="p-3 bg-gray-900 space-y-3">
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-400 mb-1">Input:</h4>
+                        <div className="p-2 bg-gray-800 rounded-md text-xs overflow-x-auto whitespace-pre-wrap">
+                          {extractInputSummaries(output.input)}
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-400 mb-1">Output:</h4>
+                        <div className="p-2 bg-gray-800 rounded-md text-xs overflow-x-auto whitespace-pre-wrap">
+                          {extractCleanText(output.output)}
+                        </div>
+                      </div>
+                      {systemPrompt && (
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-400 mb-1">System Prompt:</h4>
+                          <div className="p-2 bg-gray-800 rounded-md text-xs overflow-x-auto whitespace-pre-wrap text-blue-300">
+                            {systemPrompt}
+                          </div>
+                        </div>
                       )}
                     </div>
-                  </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="p-3 bg-gray-900 space-y-3">
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-400 mb-1">Input:</h4>
-                      <div className="p-2 bg-gray-800 rounded-md text-xs overflow-x-auto whitespace-pre-wrap">
-                        {extractInputSummaries(output.input)}
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-400 mb-1">Output:</h4>
-                      <div className="p-2 bg-gray-800 rounded-md text-xs overflow-x-auto whitespace-pre-wrap">
-                        {extractCleanText(output.output)}
-                      </div>
-                    </div>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            ))}
+                  </CollapsibleContent>
+                </Collapsible>
+              );
+            })}
           </div>
         )}
       </ScrollArea>
     </Card>
   );
 }
-
