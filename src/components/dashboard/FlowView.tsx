@@ -292,7 +292,7 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
         
         return {
           id: node.id,
-          type: node.type === "inputPrompt" ? "inputPrompt" : (nodeData.type as "input" | "model" | "action" | "output"),
+          type: nodeData.type as "input" | "model" | "action" | "output",
           modelId: "modelId" in nodeData ? nodeData.modelId : undefined,
           config: "config" in nodeData ? {
             ...nodeData.config,
