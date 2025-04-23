@@ -267,6 +267,8 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     try {
       // Find the input prompt node if it exists
       const promptNode = nodes.find(n => n.type === "inputPrompt");
+      
+      // Get prompt from the input prompt node
       const initialPrompt = promptNode && promptNode.data && "prompt" in promptNode.data
         ? String(promptNode.data.prompt ?? "")
         : "";
@@ -276,6 +278,19 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
       // Convert UI nodes to FlowNodes for execution
       const flowNodes: FlowNode[] = nodes.map(node => {
         const nodeData = node.data as AgentNodeData | InputPromptNodeData;
+        
+        // Create the appropriate FlowNode structure based on node type
+        if (node.type === "inputPrompt" && "prompt" in nodeData) {
+          return {
+            id: node.id,
+            type: "inputPrompt" as "inputPrompt",
+            inputNodeIds: edges
+              .filter(edge => edge.target === node.id)
+              .map(edge => edge.source),
+            prompt: nodeData.prompt || ""
+          };
+        }
+        
         return {
           id: node.id,
           type: node.type === "inputPrompt" ? "inputPrompt" : (nodeData.type as "input" | "model" | "action" | "output" | "inputPrompt"),
@@ -314,13 +329,35 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
               // Get inputs from connected nodes
               let inputs: any[] = [];
               if (node.inputNodeIds && node.inputNodeIds.length > 0) {
-                inputs = node.inputNodeIds.map(id => nodeOutputs[id]);
-              } else if (node.type !== "inputPrompt") {
-                // Use initial prompt for nodes with no inputs (except inputPrompt nodes)
+                inputs = node.inputNodeIds.map(id => nodeOutputs[id]).filter(Boolean);
+              }
+              
+              // For inputPrompt nodes, use the node itself as the source of input
+              if (node.type === "inputPrompt") {
+                console.log(`Using prompt directly from node ${node.id}: ${node.prompt}`);
+                nodeOutputs[node.id] = node.prompt || "";
+                
+                const executionTime = Math.round(performance.now() - startTime);
+                outputs.push({
+                  nodeId: node.id,
+                  nodeName: node.config?.label || `Node ${node.id}`,
+                  nodeType: node.type,
+                  timestamp: new Date().toISOString(),
+                  input: inputs.length === 1 ? inputs[0] : inputs,
+                  output: node.prompt || "",
+                  executionTime
+                });
+                
+                return { nodeId: node.id, success: true };
+              }
+              
+              // If this is the first non-input node and has no inputs, use the initial prompt
+              if (inputs.length === 0 && node.type !== "inputPrompt") {
                 inputs = [initialPrompt];
               }
               
               // Execute the node
+              console.log(`Executing node ${node.id} with inputs:`, inputs);
               const result = await executeNode(node, inputs);
               nodeOutputs[node.id] = result;
               
@@ -395,12 +432,12 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
             data: {
               ...node.data,
               status: hasError ? 'error' : 'idle',
-              metrics: {
+              metrics: node.type === 'agent' ? {
                 ...(node.data as AgentNodeData).metrics,
                 tasksProcessed: ((node.data as AgentNodeData).metrics?.tasksProcessed || 0) + (nodeOutput ? 1 : 0),
                 latency: nodeOutput?.executionTime || 0,
                 errorRate: hasError ? 100 : 0
-              }
+              } : undefined
             }
           };
         })
@@ -429,7 +466,7 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
         currentNodes.map(node => ({
           ...node,
           data: {
-            ...(node.data as AgentNodeData),
+            ...node.data,
             status: 'error'
           }
         }))
@@ -550,4 +587,3 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     </div>
   );
 });
-FlowView.displayName = "FlowView";

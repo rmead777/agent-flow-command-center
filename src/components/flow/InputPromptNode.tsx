@@ -1,7 +1,7 @@
 
 import { Handle, Position } from '@xyflow/react';
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MessageSquare } from "lucide-react";
 
 interface InputPromptNodeProps {
@@ -14,15 +14,29 @@ interface InputPromptNodeProps {
     [key: string]: any;
   };
   selected: boolean;
+  id: string;
 }
 
-export function InputPromptNode({ data, selected }: InputPromptNodeProps) {
+export function InputPromptNode({ data, selected, id }: InputPromptNodeProps) {
   const [prompt, setPrompt] = useState(data.prompt ?? "");
+
+  // Sync with parent data when it changes externally
+  useEffect(() => {
+    if (data.prompt !== undefined && data.prompt !== prompt) {
+      setPrompt(data.prompt);
+    }
+  }, [data.prompt]);
 
   // Sync input with parent workflow state
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPrompt(e.target.value);
-    data.onPromptChange?.(e.target.value);
+    const newValue = e.target.value;
+    setPrompt(newValue);
+    if (data.onPromptChange) {
+      data.onPromptChange(newValue);
+    }
+    
+    // Log for debugging
+    console.log(`Input prompt changed for node ${id}: ${newValue}`);
   };
 
   // Get status color

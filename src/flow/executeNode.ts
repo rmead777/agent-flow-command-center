@@ -13,6 +13,7 @@ export async function executeNode(node: FlowNode, input: any): Promise<any> {
   // Handle InputPrompt node type
   if (node.type === "inputPrompt") {
     console.log("Executing input prompt node with prompt:", node.prompt);
+    // Return the prompt directly so it can be used by downstream nodes
     return node.prompt || "";
   }
 
