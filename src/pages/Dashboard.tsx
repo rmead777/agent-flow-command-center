@@ -1,8 +1,9 @@
-import { useState } from "react";
+
+import { useState, useRef } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { FlowView } from "@/components/dashboard/FlowView";
+import { FlowView, FlowViewHandle } from "@/components/dashboard/FlowView";
 import { AgentMetricsView } from "@/components/dashboard/AgentMetricsView";
 import { LogsView } from "@/components/dashboard/LogsView";
 import { NotificationBar } from "@/components/dashboard/NotificationBar";
