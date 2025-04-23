@@ -273,21 +273,29 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
 
       const flowNodes: FlowNode[] = nodes.map(node => {
         const nodeData = node.data as FlowNodeData;
-        return {
-          id: node.id,
-          type: node.type as "input" | "model" | "action" | "output" | "inputPrompt",
-          modelId: "modelId" in nodeData ? nodeData.modelId : undefined,
-          config: "config" in nodeData ? {
-            ...nodeData.config,
-            label: nodeData.label
-          } : undefined,
-          inputNodeIds: edges
-            .filter(edge => edge.target === node.id)
-            .map(edge => edge.source),
-          prompt: node.type === "inputPrompt" && "prompt" in nodeData
-            ? String(nodeData.prompt ?? "")
-            : undefined
-        };
+        if (node.type === "inputPrompt") {
+          return {
+            id: node.id,
+            type: "inputPrompt",
+            inputNodeIds: edges
+              .filter(edge => edge.target === node.id)
+              .map(edge => edge.source),
+            prompt: "prompt" in nodeData ? String(nodeData.prompt ?? "") : undefined,
+          };
+        } else {
+          return {
+            id: node.id,
+            type: node.type as "input" | "model" | "action" | "output",
+            modelId: "modelId" in nodeData ? nodeData.modelId : undefined,
+            config: "config" in nodeData ? {
+              ...nodeData.config,
+              label: nodeData.label
+            } : undefined,
+            inputNodeIds: edges
+              .filter(edge => edge.target === node.id)
+              .map(edge => edge.source),
+          };
+        }
       });
 
       console.log("Prepared flow nodes:", flowNodes);
