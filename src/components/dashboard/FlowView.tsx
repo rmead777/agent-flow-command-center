@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { useNodesState, useEdgesState, addEdge, Connection, NodeMouseHandler, Node } from '@xyflow/react';
 import { FlowToolbar } from './FlowToolbar';
@@ -38,18 +37,15 @@ interface AgentNodeData {
   [key: string]: any;
 }
 
-// New interface for InputPromptNode data
 interface InputPromptNodeData {
   prompt?: string;
   onPromptChange?: (prompt: string) => void;
-  // Adding required AgentNodeData properties to make it compatible
   label: string;
   type: string;
   status?: 'active' | 'idle' | 'error';
   [key: string]: any;
 }
 
-// Union type to handle both kinds of nodes
 type FlowNodeData = AgentNodeData | InputPromptNodeData;
 
 export interface FlowViewHandle {
@@ -266,6 +262,13 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     });
 
     try {
+      const promptNode = nodes.find(
+        n => n.type === "inputPrompt"
+      );
+      const initialPrompt = promptNode && promptNode.data && "prompt" in promptNode.data
+        ? String(promptNode.data.prompt ?? "")
+        : "";
+
       const hasMockModel = nodes.some(node =>
         (node.data as AgentNodeData)?.modelId === 'mock-model'
       );
@@ -275,7 +278,7 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
           const nodeData = node.data as AgentNodeData;
           return {
             id: node.id,
-            type: nodeData.type as "input" | "model" | "action" | "output",
+            type: nodeData.type as "input" | "model" | "action" | "output" | "inputPrompt",
             modelId: nodeData.modelId || undefined,
             config: {
               ...nodeData.config,
@@ -283,64 +286,93 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
             },
             inputNodeIds: edges
               .filter(edge => edge.target === node.id)
-              .map(edge => edge.source)
+              .map(edge => edge.source),
+            prompt: (node.type === "inputPrompt" && "prompt" in node.data)
+              ? String((node.data as any).prompt ?? "")
+              : undefined
           };
         });
 
-        const mockInput = { 'node-1': 'Test input data' };
-        await runSimulatedFlow(flowNodes, mockInput)
-          .then(results => {
-            console.log("Flow execution results:", results);
+        const nodeMap: Record<string, FlowNode> = {};
+        flowNodes.forEach(node => { nodeMap[node.id] = node; });
 
-            setNodes(currentNodes =>
-              currentNodes.map(node => {
-                const nodeOutput = results.outputs.find(output => output.nodeId === node.id);
-                return {
-                  ...node,
-                  data: {
-                    ...(node.data as AgentNodeData),
-                    status: 'idle',
-                    metrics: {
-                      ...(node.data as AgentNodeData).metrics,
-                      tasksProcessed: ((node.data as AgentNodeData).metrics?.tasksProcessed || 0) + 1,
-                      latency: nodeOutput?.executionTime || 0,
-                      errorRate: 0
-                    }
-                  }
-                };
-              })
-            );
+        const rootNodes = flowNodes.filter(n => !n.inputNodeIds || n.inputNodeIds.length === 0);
 
-            // Store and show the outputs
-            setFlowOutputs(results.outputs);
-            setShowOutputPanel(true);
+        const mockResults: { outputs: any[] } = { outputs: [] };
+        const nodeOutputs: Record<string, any> = {};
 
-            // Save outputs to history and localStorage
-            addFlowOutputsToHistory(results.outputs);
-            localStorage.setItem(LOCALSTORAGE_OUTPUTS_KEY, JSON.stringify(results.outputs));
-
-            toast({
-              title: "Flow Execution Completed",
-              description: "Mock simulation has finished successfully",
+        async function executeNodeAndDependents(node: FlowNode) {
+          let input;
+          if (node.type === "inputPrompt") {
+            input = node.prompt ?? "";
+            nodeOutputs[node.id] = input;
+            mockResults.outputs.push({
+              nodeId: node.id,
+              output: input,
+              executionTime: 1,
+              error: null
             });
-          })
-          .catch(error => {
-            console.error("Flow execution error:", error);
-            setNodes(currentNodes =>
-              currentNodes.map(node => ({
-                ...node,
-                data: {
-                  ...(node.data as AgentNodeData),
-                  status: 'error'
+          } else if (!node.inputNodeIds || node.inputNodeIds.length === 0) {
+            input = initialPrompt;
+          } else {
+            input = node.inputNodeIds.map(pid => nodeOutputs[pid]).join("\n");
+          }
+
+          if (node.modelId === "mock-model") {
+            await new Promise(res => setTimeout(res, 2));
+            const output = `[Simulated output for: ${input}]`;
+            nodeOutputs[node.id] = output;
+            mockResults.outputs.push({
+              nodeId: node.id,
+              output,
+              executionTime: 3,
+              error: null
+            });
+          }
+
+          const dependents = flowNodes.filter(n => n.inputNodeIds && n.inputNodeIds.includes(node.id));
+          for (const dep of dependents) {
+            await executeNodeAndDependents(dep);
+          }
+        }
+
+        for (const root of rootNodes) {
+          await executeNodeAndDependents(root);
+        }
+
+        const outputsUnique = Array.from(
+          new Map(mockResults.outputs.map(o => [o.nodeId, o])).values()
+        );
+
+        setNodes(currentNodes =>
+          currentNodes.map(node => {
+            const nodeOutput = outputsUnique.find(output => output.nodeId === node.id);
+            return {
+              ...node,
+              data: {
+                ...(node.data as AgentNodeData),
+                status: 'idle',
+                metrics: {
+                  ...(node.data as AgentNodeData).metrics,
+                  tasksProcessed: ((node.data as AgentNodeData).metrics?.tasksProcessed || 0) + (nodeOutput ? 1 : 0),
+                  latency: nodeOutput?.executionTime || 0,
+                  errorRate: 0
                 }
-              }))
-            );
-            toast({
-              title: "Flow Execution Error",
-              description: error.message || "An error occurred during flow execution",
-              variant: "destructive"
-            });
-          });
+              }
+            };
+          })
+        );
+
+        setFlowOutputs(outputsUnique);
+        setShowOutputPanel(true);
+
+        addFlowOutputsToHistory(outputsUnique);
+        localStorage.setItem(LOCALSTORAGE_OUTPUTS_KEY, JSON.stringify(outputsUnique));
+
+        toast({
+          title: "Flow Execution Completed",
+          description: "Mock simulation has finished successfully",
+        });
       } else {
         toast({
           title: "Flow Validated",
@@ -408,7 +440,6 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
   return (
     <div className="h-full w-full rounded-lg border border-gray-800 bg-gray-900 flex flex-col relative">
       <div className="flex-1 relative min-h-0">
-        {/* Main FlowGraph */}
         <FlowGraph
           nodes={nodes}
           edges={edges}
@@ -419,7 +450,7 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
         >
           <div className="absolute top-2 right-2 z-10 flex gap-2">
             <FlowToolbar
-              onAddNode={() => handleAddNode()} // default agent
+              onAddNode={() => handleAddNode()}
               onAutoLayout={handleAutoLayout}
               onExecuteFlow={handleExecuteFlow}
               onSaveFlow={handleSaveFlow}
@@ -449,7 +480,6 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
           </div>
         </FlowGraph>
 
-        {/* Side Configuration Panel - as fixed/absolute sidebar */}
         {selectedNode && selectedNodeData && (
           <>
             <aside
@@ -464,7 +494,6 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
                 onDeleteNode={handleDeleteNode}
               />
             </aside>
-            {/* Add a backdrop for mobile only */}
             <div
               className="fixed inset-0 z-30 bg-black/40 md:hidden"
               onClick={() => setSelectedNode(null)}
