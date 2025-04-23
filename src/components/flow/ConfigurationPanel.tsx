@@ -1,4 +1,3 @@
-
 import { X, Play, Pause, Trash, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { PROVIDERS } from '@/pages/api-keys/apiKeyProviders';
-import { getAdapter, getModelsByProvider } from '@/adapters/adapterRegistry';
+import { getAdapter, getModelsByProvider, adapterRegistry } from '@/adapters/adapterRegistry';
 import { useState, useEffect } from 'react';
 import { Node as ReactFlowNode } from '@xyflow/react';
 import { toast } from '@/components/ui/use-toast';
@@ -49,6 +48,36 @@ interface ConfigurationPanelProps {
 const STORAGE_KEY_PREFIX = 'flow_config_';
 const getNodeStorageKey = (nodeId: string, field: string) => `${STORAGE_KEY_PREFIX}${nodeId}_${field}`;
 
+/**
+ * Helper function to find model ID in registry regardless of case
+ */
+function findModelInRegistry(modelId: string): string | undefined {
+  if (!modelId) return undefined;
+  
+  // Direct match
+  if (adapterRegistry[modelId]) return modelId;
+  
+  // Case-insensitive match
+  const normalizedId = modelId.toLowerCase();
+  const matchingKey = Object.keys(adapterRegistry).find(
+    key => key.toLowerCase() === normalizedId
+  );
+  
+  return matchingKey;
+}
+
+/**
+ * Helper function to find adapter provider regardless of model case
+ */
+function getModelProvider(modelId: string): string | undefined {
+  if (!modelId) return undefined;
+  
+  const canonicalModelId = findModelInRegistry(modelId);
+  if (!canonicalModelId) return undefined;
+  
+  return adapterRegistry[canonicalModelId]?.providerName;
+}
+
 export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }: ConfigurationPanelProps) {
   const data = node.data || {} as AgentNodeData;
   const [tempProvider, setTempProvider] = useState<string>("");
@@ -62,23 +91,61 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
     const savedModel = localStorage.getItem(getNodeStorageKey(node.id, 'model'));
     const savedType = localStorage.getItem(getNodeStorageKey(node.id, 'type'));
 
+    // First determine the provider
+    let provider = "";
+    
     if (savedProvider && modelsByProvider[savedProvider]) {
-      setTempProvider(savedProvider);
-      if (savedModel && modelsByProvider[savedProvider]?.includes(savedModel)) {
+      provider = savedProvider;
+    } else if (data.modelId) {
+      // Try to get provider from the model ID
+      const detectedProvider = getModelProvider(data.modelId);
+      if (detectedProvider) {
+        provider = detectedProvider;
+      }
+    }
+    
+    if (provider) {
+      setTempProvider(provider);
+      
+      // Now handle model selection
+      let modelId = data.modelId || "";
+      
+      // If there's a saved model that matches the provider
+      if (savedModel && provider === savedProvider) {
+        // Find the canonical model ID regardless of case
+        const availableModels = modelsByProvider[provider] || [];
+        const canonicalModelId = availableModels.find(m => 
+          m.toLowerCase() === savedModel.toLowerCase()
+        );
+        
+        if (canonicalModelId) {
+          modelId = canonicalModelId;
+        }
+      }
+      
+      // If we have a model ID, ensure it exists in the registry
+      if (modelId) {
+        const canonicalModelId = findModelInRegistry(modelId);
+        if (canonicalModelId) {
+          modelId = canonicalModelId;
+        }
+      }
+      
+      // Update the node if we have a model
+      if (modelId && modelId !== data.modelId) {
         onNodeChange(prev => ({
           ...prev,
           data: {
             ...prev.data,
-            modelId: savedModel,
+            modelId: modelId,
           }
         }));
       }
-    } else if (data.modelId && getAdapter(data.modelId)) {
-      setTempProvider(getAdapter(data.modelId)!.providerName);
     } else {
       setTempProvider("");
     }
 
+    // Handle agent type
     if (savedType) {
       setTempAgentType(savedType);
       if (savedType !== data.type) {
@@ -95,6 +162,7 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
     } else {
       setTempAgentType("");
     }
+    
     setHasShownMockHint(false);
   }, [node.id]);
 
@@ -110,7 +178,6 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
   const agentName = data.label || "";
   const agentType = selectedAgentType;
 
-  // Handlers (EDITED for live updates)
   const updateConfig = (key: string, value: any) => {
     onNodeChange(prev => ({
       ...prev,
@@ -124,7 +191,6 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
     }));
   };
 
-  // This handler updates name live, so it will be used and saved
   const updateLabel = (value: string) => {
     onNodeChange(prev => ({
       ...prev,
