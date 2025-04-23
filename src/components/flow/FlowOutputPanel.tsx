@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
@@ -112,22 +113,23 @@ export function FlowOutputPanel({ outputs, isVisible, onClose, title = "Flow Exe
         ) : (
           <div className="space-y-3">
             {outputs.map((output, index) => {
-              const systemPrompt =
-                typeof output.config === 'object' && typeof output.config.systemPrompt === 'string'
-                  ? output.config.systemPrompt.trim()
-                  : undefined;
+              const nodeKey = `${output.nodeId}-${index}`;
+              const isExpanded = expandedNodes[nodeKey] || false;
+              
+              // Extract system prompt if available
+              const systemPrompt = output.config?.systemPrompt || '';
 
               return (
                 <Collapsible 
-                  key={`${output.nodeId}-${index}`}
-                  open={expandedNodes[`${output.nodeId}-${index}`]} 
-                  onOpenChange={() => toggleNodeExpansion(`${output.nodeId}-${index}`)}
+                  key={nodeKey}
+                  open={isExpanded} 
+                  onOpenChange={() => toggleNodeExpansion(nodeKey)}
                   className="border border-gray-800 rounded-md overflow-hidden"
                 >
                   <CollapsibleTrigger asChild>
                     <div className="flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-800 cursor-pointer">
                       <div className="flex items-center">
-                        {expandedNodes[`${output.nodeId}-${index}`] ? 
+                        {isExpanded ? 
                           <ChevronDown className="h-4 w-4 mr-2 text-gray-400" /> : 
                           <ChevronRight className="h-4 w-4 mr-2 text-gray-400" />
                         }
