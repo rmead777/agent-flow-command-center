@@ -2,28 +2,6 @@
 import { adapterRegistry } from "../../adapters/adapterRegistry";
 
 /**
- * Attempts to find an adapter for a model ID in a case-insensitive way
- */
-function findAdapterForModel(modelId: string) {
-  // Try direct lookup first
-  let adapter = adapterRegistry[modelId];
-  
-  // If not found, try case-insensitive lookup
-  if (!adapter) {
-    const normalizedSearchId = modelId.toLowerCase();
-    const matchingKey = Object.keys(adapterRegistry).find(
-      key => key.toLowerCase() === normalizedSearchId
-    );
-    
-    if (matchingKey) {
-      adapter = adapterRegistry[matchingKey];
-    }
-  }
-  
-  return adapter;
-}
-
-/**
  * Validate a flow node's configuration against its model adapter
  */
 export function validateFlowNodeConfig(
@@ -40,8 +18,7 @@ export function validateFlowNodeConfig(
     return { isValid: false, errors };
   }
   
-  const adapter = findAdapterForModel(modelId);
-  
+  const adapter = adapterRegistry[modelId];
   if (!adapter) {
     errors.push(`Flow node has invalid modelId: "${modelId}"`);
     return { isValid: false, errors };

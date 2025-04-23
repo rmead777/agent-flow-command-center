@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { useNodesState, useEdgesState, addEdge, Connection, NodeMouseHandler, Node } from '@xyflow/react';
 import { FlowToolbar } from './FlowToolbar';
@@ -11,15 +12,6 @@ import { runSimulatedFlow } from '@/flow/MockRunner';
 import { FlowNode } from '@/flow/types';
 import { addFlowOutputsToHistory } from '@/data/logData';
 import { loadFromLocalStorage } from './helpers';
-import { adapterRegistry } from '@/adapters/adapterRegistry';
-import { useIsMobile } from '@/hooks/use-mobile';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerClose,
-} from '@/components/ui/drawer';
 
 interface AgentNodeData {
   label: string;
@@ -53,38 +45,6 @@ const LOCALSTORAGE_NODES_KEY = "ai_flow_nodes";
 const LOCALSTORAGE_EDGES_KEY = "ai_flow_edges";
 const LOCALSTORAGE_OUTPUTS_KEY = "ai_flow_last_outputs";
 
-/**
- * Helper function to normalize model IDs in saved flows
- */
-function migrateModelIds(nodes: Node<AgentNodeData>[]): Node<AgentNodeData>[] {
-  return nodes.map(node => {
-    if (!node.data?.modelId) return node;
-    
-    const modelId = node.data.modelId;
-    // Check if this exact modelId exists in the registry
-    if (adapterRegistry[modelId]) return node;
-    
-    // Try to find a case-insensitive match
-    const normalizedModelId = modelId.toLowerCase();
-    const matchingRegistryKey = Object.keys(adapterRegistry).find(
-      key => key.toLowerCase() === normalizedModelId
-    );
-    
-    if (matchingRegistryKey) {
-      console.log(`Migrating model ID from "${modelId}" to "${matchingRegistryKey}"`);
-      return {
-        ...node,
-        data: {
-          ...node.data,
-          modelId: matchingRegistryKey
-        }
-      };
-    }
-    
-    return node;
-  });
-}
-
 export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
   const typedInitialNodes: Node<AgentNodeData>[] = initialNodes.map(node => ({
     ...node,
@@ -93,11 +53,9 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     } as AgentNodeData,
   }));
 
-  // Load saved nodes and migrate any model IDs as needed
-  const savedNodes = loadFromLocalStorage<Node<AgentNodeData>[]>(LOCALSTORAGE_NODES_KEY, typedInitialNodes);
-  const migratedNodes = migrateModelIds(savedNodes);
-  
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node<AgentNodeData>>(migratedNodes);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node<AgentNodeData>>(
+    loadFromLocalStorage<Node<AgentNodeData>[]>(LOCALSTORAGE_NODES_KEY, typedInitialNodes)
+  );
   const [edges, setEdges, onEdgesChange] = useEdgesState(
     loadFromLocalStorage(LOCALSTORAGE_EDGES_KEY, initialEdges)
   );
@@ -106,16 +64,6 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
   const [isExecuting, setIsExecuting] = useState(false);
   const [flowOutputs, setFlowOutputs] = useState<FlowOutput[]>([]);
   const [showOutputPanel, setShowOutputPanel] = useState(false);
-  const [hasPerformedMigration, setHasPerformedMigration] = useState(false);
-  const [panelOpen, setPanelOpen] = useState(false);
-  const isMobile = useIsMobile();
-
-  const closePanel = useCallback(() => {
-    if (isMobile) {
-      setPanelOpen(false);
-    }
-    setSelectedNode(null);
-  }, [isMobile]);
 
   useImperativeHandle(ref, () => ({
     runFlow: () => handleExecuteFlow(),
@@ -134,36 +82,14 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     }
   }));
 
-  // Perform one-time migration if needed
-  useEffect(() => {
-    if (!hasPerformedMigration) {
-      // Check if we actually made any changes during migration
-      if (JSON.stringify(savedNodes) !== JSON.stringify(migratedNodes)) {
-        setNodes(migratedNodes);
-        // Save migrated nodes back to localStorage
-        localStorage.setItem(LOCALSTORAGE_NODES_KEY, JSON.stringify(migratedNodes));
-        toast({
-          title: 'Flow Migrated',
-          description: 'Your flow was automatically updated to fix model compatibility issues.',
-        });
-      }
-      setHasPerformedMigration(true);
-    }
-  }, [hasPerformedMigration]);
-
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
 
-  const onNodeSelect = useCallback((nodeId: string) => {
-    setSelectedNode(nodeId);
-    if (isMobile) setPanelOpen(true);
-  }, [isMobile]);
-
   const onNodeClick: NodeMouseHandler<Node<AgentNodeData>> = useCallback((_, node) => {
-    onNodeSelect(node.id);
-  }, [onNodeSelect]);
+    setSelectedNode(node.id);
+  }, []);
 
   const selectedNodeData = selectedNode
     ? nodes.find(n => n.id === selectedNode)
@@ -190,9 +116,7 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
   }, []);
 
   function handleSaveFlow() {
-    // Save with potentially corrected model IDs
-    const nodesToSave = migrateModelIds(nodes);
-    localStorage.setItem(LOCALSTORAGE_NODES_KEY, JSON.stringify(nodesToSave));
+    localStorage.setItem(LOCALSTORAGE_NODES_KEY, JSON.stringify(nodes));
     localStorage.setItem(LOCALSTORAGE_EDGES_KEY, JSON.stringify(edges));
     toast({
       title: 'Flow Saved',
@@ -449,36 +373,13 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
         onClose={() => setShowOutputPanel(false)}
       />
 
-      {/* Desktop: show panel inline, Mobile: use Drawer */}
-      {!isMobile && selectedNode && selectedNodeData && (
+      {selectedNode && selectedNodeData && (
         <ConfigurationPanel
           node={selectedNodeData as Node<AgentNodeData>}
           onNodeChange={(updater) => updateNodeData(selectedNode, updater)}
-          onClose={closePanel}
+          onClose={() => setSelectedNode(null)}
           onDeleteNode={handleDeleteNode}
         />
-      )}
-
-      {isMobile && (
-        <Drawer open={panelOpen} onOpenChange={(open) => {
-          setPanelOpen(open);
-          if (!open) setSelectedNode(null);
-        }}>
-          <DrawerContent>
-            <DrawerHeader>
-              <DrawerTitle>Agent Configuration</DrawerTitle>
-              <DrawerClose />
-            </DrawerHeader>
-            {selectedNode && selectedNodeData && (
-              <ConfigurationPanel
-                node={selectedNodeData as Node<AgentNodeData>}
-                onNodeChange={(updater) => updateNodeData(selectedNode, updater)}
-                onClose={closePanel}
-                onDeleteNode={handleDeleteNode}
-              />
-            )}
-          </DrawerContent>
-        </Drawer>
       )}
     </div>
   );

@@ -1,44 +1,8 @@
 
 import { FlowNode } from "./types";
-import { getAdapter, adapterRegistry } from "../adapters/adapterRegistry";
+import { getAdapter } from "../adapters/adapterRegistry";
 import { toast } from "@/components/ui/use-toast";
 import { validateFlowNodeConfig } from "../utils/modelValidation";
-
-/**
- * Get adapter by model ID, attempting with different case variations
- */
-function getAdapterCaseInsensitive(modelId: string): any {
-  // First try direct lookup
-  let adapter = getAdapter(modelId);
-  
-  if (!adapter) {
-    // Try lowercase version
-    adapter = getAdapter(modelId.toLowerCase());
-  }
-  
-  if (!adapter) {
-    // Try uppercase for first letter of each segment
-    const normalizedId = modelId
-      .split('-')
-      .map(segment => segment.charAt(0).toUpperCase() + segment.slice(1).toLowerCase())
-      .join('-');
-    adapter = getAdapter(normalizedId);
-  }
-  
-  if (!adapter) {
-    // Final fallback: try looking through all adapters with case-insensitive comparison
-    const modelIdLower = modelId.toLowerCase();
-    const matchingModelId = Object.keys(adapterRegistry).find(
-      id => id.toLowerCase() === modelIdLower
-    );
-    
-    if (matchingModelId) {
-      adapter = adapterRegistry[matchingModelId];
-    }
-  }
-  
-  return adapter;
-}
 
 /**
  * Calls the appropriate adapter for a given node.
@@ -48,11 +12,14 @@ export async function executeNode(node: FlowNode, input: any): Promise<any> {
     throw new Error("Node missing modelId");
   }
   
-  // Get adapter with case-insensitive lookup
-  const adapter = getAdapterCaseInsensitive(node.modelId);
+  // Normalize model ID to match registry (handle case sensitivity)
+  const modelId = node.modelId.toLowerCase();
+  
+  // Get adapter from registry
+  const adapter = getAdapter(modelId) || getAdapter(node.modelId);
   
   if (!adapter) {
-    throw new Error(`Missing adapter for model: ${node.modelId}`);
+    throw new Error(`Missing adapter for model: ${node.modelId} (normalized: ${modelId})`);
   }
   
   // Use default config if none provided
