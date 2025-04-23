@@ -18,7 +18,7 @@ export class PerplexityAdapter implements ModelAdapter {
         { role: "user", content: input }
       ],
       temperature: config.temperature ?? 0.7,
-      max_tokens: config.maxTokens ?? 1000,
+      max_tokens: config.maxTokens ?? 8000,
       top_p: 0.9,
       return_images: false,
       return_related_questions: false,
@@ -49,7 +49,7 @@ export class PerplexityAdapter implements ModelAdapter {
     return {
       systemPrompt: "You are a helpful assistant.",
       temperature: 0.7,
-      maxTokens: 1000,
+      maxTokens: 8000,
       enableWebSearch: true
     };
   }
