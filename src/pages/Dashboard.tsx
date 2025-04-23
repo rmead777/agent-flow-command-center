@@ -55,7 +55,7 @@ const Dashboard = () => {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-background text-foreground">
+      <div className="flex min-h-screen w-full bg-background text-foreground flex-col md:flex-row">
         <DashboardSidebar currentView={currentView} setCurrentView={setCurrentView as any} />
         <div className="flex flex-1 flex-col">
           <NotificationBar notifications={notifications} />
@@ -65,7 +65,7 @@ const Dashboard = () => {
             onCode={handleCode}
             onSettings={handleSettings}
           />
-          <main className="flex-1 overflow-auto p-4">
+          <main className="flex-1 overflow-auto p-2 sm:p-4">
             {currentView === "flow" && <FlowView ref={flowViewRef} />}
             {currentView === "metrics" && <AgentMetricsView />}
             {currentView === "logs" && <LogsView />}
@@ -84,3 +84,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
