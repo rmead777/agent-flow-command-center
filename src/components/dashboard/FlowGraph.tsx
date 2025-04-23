@@ -12,6 +12,8 @@ import {
   Edge
 } from "@xyflow/react";
 import { AgentNode } from "@/components/flow/AgentNode";
+import { InputPromptNode } from "@/components/flow/InputPromptNode"; // NEW
+
 import "@xyflow/react/dist/style.css"; // Add missing CSS import
 
 interface AgentNodeData {
@@ -37,6 +39,7 @@ interface AgentNodeData {
 
 const nodeTypes = {
   agent: AgentNode,
+  inputPrompt: InputPromptNode, // Register the new node type
 };
 
 interface FlowGraphProps {
@@ -81,6 +84,8 @@ export const FlowGraph: React.FC<FlowGraphProps> = ({
             return "#8b5cf6";
           case "response":
             return "#10b981";
+          case "inputPrompt":
+            return "#3b82f6";
           default:
             return "#64748b";
         }
