@@ -12,6 +12,14 @@ import { FlowNode } from '@/flow/types';
 import { addFlowOutputsToHistory } from '@/data/logData';
 import { loadFromLocalStorage } from './helpers';
 import { adapterRegistry } from '@/adapters/adapterRegistry';
+import { useIsMobile } from '@/hooks/use-mobile';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerClose,
+} from '@/components/ui/drawer';
 
 interface AgentNodeData {
   label: string;
@@ -99,6 +107,8 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
   const [flowOutputs, setFlowOutputs] = useState<FlowOutput[]>([]);
   const [showOutputPanel, setShowOutputPanel] = useState(false);
   const [hasPerformedMigration, setHasPerformedMigration] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   useImperativeHandle(ref, () => ({
     runFlow: () => handleExecuteFlow(),
@@ -139,9 +149,14 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     [setEdges]
   );
 
+  const onNodeSelect = useCallback((nodeId: string) => {
+    setSelectedNode(nodeId);
+    if (isMobile) setPanelOpen(true);
+  }, [isMobile]);
+
   const onNodeClick: NodeMouseHandler<Node<AgentNodeData>> = useCallback((_, node) => {
-    setSelectedNode(node.id);
-  }, []);
+    onNodeSelect(node.id);
+  }, [onNodeSelect]);
 
   const selectedNodeData = selectedNode
     ? nodes.find(n => n.id === selectedNode)
@@ -427,13 +442,36 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
         onClose={() => setShowOutputPanel(false)}
       />
 
-      {selectedNode && selectedNodeData && (
+      {/* Desktop: show panel inline, Mobile: use Drawer */}
+      {!isMobile && selectedNode && selectedNodeData && (
         <ConfigurationPanel
           node={selectedNodeData as Node<AgentNodeData>}
           onNodeChange={(updater) => updateNodeData(selectedNode, updater)}
-          onClose={() => setSelectedNode(null)}
+          onClose={closePanel}
           onDeleteNode={handleDeleteNode}
         />
+      )}
+
+      {isMobile && (
+        <Drawer open={panelOpen} onOpenChange={(open) => {
+          setPanelOpen(open);
+          if (!open) setSelectedNode(null);
+        }}>
+          <DrawerContent>
+            <DrawerHeader>
+              <DrawerTitle>Agent Configuration</DrawerTitle>
+              <DrawerClose />
+            </DrawerHeader>
+            {selectedNode && selectedNodeData && (
+              <ConfigurationPanel
+                node={selectedNodeData as Node<AgentNodeData>}
+                onNodeChange={(updater) => updateNodeData(selectedNode, updater)}
+                onClose={closePanel}
+                onDeleteNode={handleDeleteNode}
+              />
+            )}
+          </DrawerContent>
+        </Drawer>
       )}
     </div>
   );
