@@ -1,3 +1,4 @@
+
 import { FlowNode } from "./types";
 import { getAdapter } from "../adapters/adapterRegistry";
 import { toast } from "@/components/ui/use-toast";
@@ -60,7 +61,7 @@ export async function executeNode(node: FlowNode, input: any): Promise<any> {
     
     // Handle complex objects and array inputs
     if (Array.isArray(input)) {
-      // Check if array items are objects that need special handling
+      // Safely map over array items and handle each one
       processedInput = input.map(item => {
         if (item && typeof item === 'object') {
           // If the object has an output property, use that
@@ -70,7 +71,7 @@ export async function executeNode(node: FlowNode, input: any): Promise<any> {
           // Otherwise stringify the whole object
           return JSON.stringify(item);
         }
-        return item;
+        return String(item || "");
       }).filter(Boolean).join("\n");
     } else if (input && typeof input === 'object') {
       // If the object has an output property, use that
