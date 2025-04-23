@@ -32,6 +32,7 @@ interface BaseNodeData {
   label: string;
   type: string;
   status?: "active" | "idle" | "error";
+  color?: string;
   [key: string]: any;
 }
 
@@ -164,6 +165,9 @@ export const FlowGraph: React.FC<FlowGraphProps> = ({
       <MiniMap
         nodeColor={(node) => {
           const nodeData = node.data as FlowNodeData;
+          if (nodeData?.color) {
+            return nodeData.color;
+          }
           switch (nodeData.type) {
             case "input":
               return "#6366f1";

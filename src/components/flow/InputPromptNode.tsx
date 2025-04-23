@@ -11,6 +11,7 @@ interface InputPromptNodeProps {
     label: string;
     type: string;
     status?: 'active' | 'idle' | 'error';
+    color?: string; // Custom color
     [key: string]: any;
   };
   selected: boolean;
@@ -20,26 +21,21 @@ interface InputPromptNodeProps {
 export function InputPromptNode({ data, selected, id }: InputPromptNodeProps) {
   const [prompt, setPrompt] = useState(data.prompt ?? "");
 
-  // Sync with parent data when it changes externally
   useEffect(() => {
     if (data.prompt !== undefined && data.prompt !== prompt) {
       setPrompt(data.prompt);
     }
   }, [data.prompt]);
 
-  // Sync input with parent workflow state
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
     setPrompt(newValue);
     if (data.onPromptChange) {
       data.onPromptChange(newValue);
     }
-    
-    // Log for debugging
     console.log(`Input prompt changed for node ${id}: ${newValue}`);
   };
 
-  // Get status color
   const getStatusColor = () => {
     if (data.status === 'active') return 'bg-green-500';
     if (data.status === 'error') return 'bg-red-500';
@@ -48,8 +44,13 @@ export function InputPromptNode({ data, selected, id }: InputPromptNodeProps) {
 
   return (
     <div
-      className={`rounded-md p-4 shadow-md bg-sky-900 text-sky-100 border-2 ${selected ? "ring-2 ring-white/60" : "border-sky-800"}`}
-      style={{ width: 250, minHeight: 120 }}
+      className={`rounded-md p-4 shadow-md border-2 ${selected ? "ring-2 ring-white/60" : "border-sky-800"}`}
+      style={{
+        background: data.color ? data.color : "#0c3052", // fallback sky-900
+        color: data.color ? "#15142b" : "#e0ecff",
+        width: 250,
+        minHeight: 120
+      }}
     >
       <Handle type="target" position={Position.Top} className="!bg-gray-300" isConnectable={true} />
       <div className="flex items-center justify-between mb-2">
