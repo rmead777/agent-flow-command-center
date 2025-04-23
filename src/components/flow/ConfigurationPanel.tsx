@@ -1,3 +1,4 @@
+
 import { X, Play, Pause, Trash, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,27 +45,28 @@ interface ConfigurationPanelProps {
   onClose: () => void;
 }
 
-// LocalStorage keys for provider and model selections
+// LocalStorage keys for provider, model, and type selections
 const STORAGE_KEY_PREFIX = 'flow_config_';
 const getNodeStorageKey = (nodeId: string, field: string) => `${STORAGE_KEY_PREFIX}${nodeId}_${field}`;
 
 export function ConfigurationPanel({ node, onNodeChange, onClose }: ConfigurationPanelProps) {
   const data = node.data || {} as AgentNodeData;
   const [tempProvider, setTempProvider] = useState<string>("");
+  const [tempAgentType, setTempAgentType] = useState<string>("");
 
   // Helper: Get full models by provider mapping
   const modelsByProvider = getModelsByProvider();
 
-  // --- PERSIST/RESTORE LOGIC FOR PROVIDER/MODEL SELECTIONS ---
-  // 1. Restore provider/model from localStorage when panel mounts or the node changes
+  // --- PERSIST/RESTORE LOGIC FOR PROVIDER/MODEL/TYPE SELECTIONS ---
   useEffect(() => {
-    // Fetch from storage on every mount/node change (prevents reverting to defaults)
+    // Restore provider/model/type from storage each time node changes (prevents reverting to defaults)
     const savedProvider = localStorage.getItem(getNodeStorageKey(node.id, 'provider'));
     const savedModel = localStorage.getItem(getNodeStorageKey(node.id, 'model'));
+    const savedType = localStorage.getItem(getNodeStorageKey(node.id, 'type'));
 
+    // Provider/model logic
     if (savedProvider && modelsByProvider[savedProvider]) {
       setTempProvider(savedProvider);
-
       // Always update node data when restoring, if different
       if (savedModel && modelsByProvider[savedProvider]?.includes(savedModel)) {
         onNodeChange(prev => ({
@@ -82,6 +84,25 @@ export function ConfigurationPanel({ node, onNodeChange, onClose }: Configuratio
     } else {
       setTempProvider("");
     }
+
+    // Type logic
+    if (savedType) {
+      setTempAgentType(savedType);
+      // Always update node data when restoring, if different
+      if (savedType !== data.type) {
+        onNodeChange(prev => ({
+          ...prev,
+          data: {
+            ...prev.data,
+            type: savedType
+          }
+        }));
+      }
+    } else if (data.type) {
+      setTempAgentType(data.type);
+    } else {
+      setTempAgentType("");
+    }
     // eslint-disable-next-line
   }, [node.id]);
 
@@ -89,14 +110,15 @@ export function ConfigurationPanel({ node, onNodeChange, onClose }: Configuratio
   const selectedProvider = tempProvider;
   const selectedModel = data.modelId || "";
   const availableModels = selectedProvider ? modelsByProvider[selectedProvider] || [] : [];
+  const selectedAgentType = data.type || tempAgentType || "";
 
-  // System Prompt, Temperature slider are controlled directly and update node immediately
   const systemPrompt = data.config?.systemPrompt || "";
   const temperature = data.config?.temperature ?? 0.7;
   const streamResponse = data.config?.streamResponse ?? true;
   const retryOnError = data.config?.retryOnError ?? true;
   const agentName = data.label || "";
-  const agentType = data.type || "";
+  // Use selectedAgentType for display and control
+  const agentType = selectedAgentType;
 
   // Immediate node-updating handlers for all fields
   const updateConfig = (key: string, value: any) => {
@@ -122,7 +144,10 @@ export function ConfigurationPanel({ node, onNodeChange, onClose }: Configuratio
     }));
   };
 
+  // --- Persist agent type to localStorage ---
   const updateAgentType = (value: string) => {
+    localStorage.setItem(getNodeStorageKey(node.id, 'type'), value);
+    setTempAgentType(value);
     onNodeChange(prev => ({
       ...prev,
       data: {
@@ -135,7 +160,6 @@ export function ConfigurationPanel({ node, onNodeChange, onClose }: Configuratio
   // --- Existing updateProvider now persists to localStorage ---
   const updateProvider = (provider: string) => {
     localStorage.setItem(getNodeStorageKey(node.id, 'provider'), provider);
-
     setTempProvider(provider);
 
     // Clear modelId and persist blank model selection
