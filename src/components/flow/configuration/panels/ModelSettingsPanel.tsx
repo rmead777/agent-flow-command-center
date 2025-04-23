@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -7,6 +6,7 @@ import { Slider } from '@/components/ui/slider';
 import { BasePanelProps } from '../types/configuration.types';
 import { useConfigurationState } from '../hooks/useConfigurationState';
 import { getModelsByProvider } from '@/adapters/adapterRegistry';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export function ModelSettingsPanel({ node, onNodeChange }: BasePanelProps) {
   const { 
@@ -24,6 +24,9 @@ export function ModelSettingsPanel({ node, onNodeChange }: BasePanelProps) {
   const temperature = node.data?.config?.temperature ?? 0.7;
   const streamResponse = node.data?.config?.streamResponse ?? true;
   const retryOnError = node.data?.config?.retryOnError ?? true;
+
+  const showWebSearchOption = tempProvider === "OpenAI" && selectedModel === "gpt-4.1";
+  const enableWebSearch = node.data?.config?.enableWebSearch ?? false;
 
   useEffect(() => {
     if (tempProvider === "Mock" && selectedModel === "mock-model") {
@@ -152,7 +155,25 @@ export function ModelSettingsPanel({ node, onNodeChange }: BasePanelProps) {
           onCheckedChange={val => updateConfig("retryOnError", val)}  
         />
       </div>
+
+      {showWebSearchOption && (
+        <div className="flex items-center justify-between">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <label className="text-sm font-medium">Enable Web Search</label>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Allows the model to search the web for recent information</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <Switch 
+            checked={enableWebSearch}
+            onCheckedChange={val => updateConfig("enableWebSearch", val)}
+          />
+        </div>
+      )}
     </div>
   );
 }
-

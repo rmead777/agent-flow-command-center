@@ -17,6 +17,7 @@ export interface AgentNodeData extends Record<string, unknown> {
     maxTokens?: number;
     streamResponse?: boolean;
     retryOnError?: boolean;
+    enableWebSearch?: boolean;
     [key: string]: any;
   };
   color?: string;

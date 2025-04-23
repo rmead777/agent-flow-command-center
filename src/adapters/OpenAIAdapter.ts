@@ -1,17 +1,16 @@
-
 import { ModelAdapter } from "./ModelAdapter";
 
 export class OpenAIAdapter implements ModelAdapter {
   modelName: string;
   providerName = "OpenAI";
-  supportedFeatures = ["text", "images"];
+  supportedFeatures = ["text", "images", "web_search"];
 
   constructor(modelName = "gpt-4o") {
     this.modelName = modelName;
   }
 
   buildRequest(input: string, config: any) {
-    return {
+    const request: any = {
       model: this.modelName,
       messages: [
         { role: "system", content: config.systemPrompt || "You are helpful." },
@@ -20,6 +19,13 @@ export class OpenAIAdapter implements ModelAdapter {
       temperature: config.temperature ?? 0.7,
       max_tokens: config.maxTokens ?? 512,
     };
+
+    // Add web search tool if enabled and model supports it
+    if (config.enableWebSearch && this.modelName === "gpt-4.1") {
+      request.tools = [{ type: "web_search_preview" }];
+    }
+
+    return request;
   }
 
   parseResponse(response: any) {
@@ -42,7 +48,8 @@ export class OpenAIAdapter implements ModelAdapter {
     return {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: "You are a helpful assistant."
+      systemPrompt: "You are a helpful assistant.",
+      enableWebSearch: false
     };
   }
 }
