@@ -10,6 +10,8 @@ import { executeModel } from "@/api/executeApi";
  * Calls the appropriate adapter for a given node.
  */
 export async function executeNode(node: FlowNode, input: any): Promise<any> {
+  console.log(`Starting execution of node ${node.id} of type ${node.type} with input:`, input);
+
   // Handle InputPrompt node type
   if (node.type === "inputPrompt") {
     console.log("Executing input prompt node with prompt:", node.prompt);

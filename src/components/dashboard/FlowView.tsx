@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { useNodesState, useEdgesState, addEdge, Connection, NodeMouseHandler, Node } from '@xyflow/react';
 import { FlowToolbar } from './FlowToolbar';
@@ -265,15 +264,21 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     });
 
     try {
-      const promptNode = nodes.find(n => n.type === "inputPrompt");
-      const initialPrompt = promptNode && promptNode.data && "prompt" in promptNode.data
-        ? String(promptNode.data.prompt ?? "")
-        : "";
-
-      console.log("Initial prompt:", initialPrompt);
+      const promptNodes = nodes.filter(n => n.type === "inputPrompt");
+      let userPrompt = "";
+      
+      if (promptNodes.length > 0) {
+        const firstPromptNode = promptNodes[0];
+        userPrompt = firstPromptNode.data && "prompt" in firstPromptNode.data
+          ? String(firstPromptNode.data.prompt || "") 
+          : "";
+        
+        console.log(`Found prompt node with value: "${userPrompt}"`);
+      }
 
       const flowNodes: FlowNode[] = nodes.map(node => {
         const nodeData = node.data as FlowNodeData;
+        
         if (node.type === "inputPrompt") {
           return {
             id: node.id,
@@ -281,7 +286,7 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
             inputNodeIds: edges
               .filter(edge => edge.target === node.id)
               .map(edge => edge.source),
-            prompt: "prompt" in nodeData ? String(nodeData.prompt ?? "") : undefined,
+            prompt: "prompt" in nodeData ? String(nodeData.prompt || "") : undefined,
           };
         } else {
           return {
@@ -315,12 +320,17 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
             try {
               let inputs: any[] = [];
               if (node.inputNodeIds && node.inputNodeIds.length > 0) {
-                inputs = node.inputNodeIds.map(id => nodeOutputs[id]).filter(Boolean);
+                inputs = node.inputNodeIds
+                  .map(id => nodeOutputs[id])
+                  .filter(output => output !== undefined);
+                
+                console.log(`Node ${node.id} has inputs from: ${node.inputNodeIds}`, inputs);
               }
 
               if (node.type === "inputPrompt") {
-                console.log(`Using prompt directly from node ${node.id}: ${node.prompt}`);
-                nodeOutputs[node.id] = node.prompt || "";
+                const promptValue = node.prompt || userPrompt;
+                console.log(`Using prompt directly from node ${node.id}: "${promptValue}"`);
+                nodeOutputs[node.id] = promptValue;
                 
                 const executionTime = Math.round(performance.now() - startTime);
                 outputs.push({
@@ -328,21 +338,17 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
                   nodeName: node.config?.label || `Node ${node.id}`,
                   nodeType: node.type,
                   timestamp: new Date().toISOString(),
-                  input: inputs.length === 1 ? inputs[0] : inputs,
-                  output: node.prompt || "",
+                  input: inputs.length > 0 ? inputs : null,
+                  output: promptValue,
                   executionTime
                 });
                 
                 return { nodeId: node.id, success: true };
               }
 
-              // Only use initialPrompt if:
-              // 1. This node has no inputs (inputs array is empty)
-              // 2. AND this node is NOT an inputPrompt type (which we already handled above)
-              // 3. AND we have an initialPrompt value from a prompt node
-              if (inputs.length === 0 && initialPrompt) {
-                console.log(`Node ${node.id} has no inputs, using initialPrompt: ${initialPrompt}`);
-                inputs = [initialPrompt];
+              if (inputs.length === 0 && userPrompt && node.type !== "inputPrompt") {
+                console.log(`Node ${node.id} has no inputs, using user prompt: "${userPrompt}"`);
+                inputs = [userPrompt];
               }
 
               console.log(`Executing node ${node.id} with inputs:`, inputs);
@@ -568,4 +574,3 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     </div>
   );
 });
-

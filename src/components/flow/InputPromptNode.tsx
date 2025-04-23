@@ -1,6 +1,5 @@
 
 import { Handle, Position } from '@xyflow/react';
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect } from "react";
 import { MessageSquare } from "lucide-react";
