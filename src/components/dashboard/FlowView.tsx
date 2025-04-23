@@ -335,7 +335,7 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
                 return { nodeId: node.id, success: true };
               }
 
-              if (inputs.length === 0 && node.type !== "inputPrompt") {
+              if (inputs.length === 0) {
                 inputs = [initialPrompt];
               }
 
