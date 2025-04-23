@@ -14,7 +14,7 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { PROVIDERS } from '@/pages/api-keys/apiKeyProviders';
 import { getAdapter, getModelsByProvider } from '@/adapters/adapterRegistry';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Node as ReactFlowNode } from '@xyflow/react';
 import { toast } from '@/components/ui/use-toast';
 
@@ -132,6 +132,7 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
   const availableModels = selectedProvider ? modelsByProvider[selectedProvider] || [] : [];
   const selectedAgentType = data.type || tempAgentType || "";
   const color = data.color || "";
+  const colorInputRef = useRef<HTMLInputElement>(null);
 
   const systemPrompt = data.config?.systemPrompt || "";
   const temperature = data.config?.temperature ?? 0.7;
@@ -216,6 +217,10 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
 
   const handleTemperature = (value: number[]) => {
     updateConfig("temperature", value[0]);
+  };
+
+  const handleCustomColor = (e: React.ChangeEvent<HTMLInputElement>) => {
+    updateColor(e.target.value);
   };
 
   if (!node) return null;
@@ -405,7 +410,7 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
 
         <div className="mb-4">
           <label className="block mb-2 text-sm font-medium">Node Color</label>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 mb-2">
             {COLOR_OPTIONS.map((c) => (
               <button
                 key={c}
@@ -423,6 +428,22 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
                 )}
               </button>
             ))}
+            <input
+              ref={colorInputRef}
+              type="color"
+              value={color && !COLOR_OPTIONS.includes(color) ? color : "#8E9196"}
+              onChange={handleCustomColor}
+              title="Pick custom color"
+              className="w-7 h-7 rounded-full border-2 cursor-pointer border-gray-700 bg-transparent p-0"
+              style={{
+                padding: 0,
+                border: color && !COLOR_OPTIONS.includes(color) ? "2px solid #f59e42" : "2px solid #64748b"
+              }}
+              aria-label="Pick custom color"
+            />
+          </div>
+          <div className="text-xs text-gray-400">
+            Choose from preset colors or pick any color using the wheel.
           </div>
         </div>
       </div>
