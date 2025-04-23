@@ -458,6 +458,17 @@ export const FlowView = forwardRef<FlowViewHandle, FlowViewProps>(({ masterUserP
 
   const toggleOutputPanel = () => {
     setShowOutputPanel(!showOutputPanel);
+    
+    if (!showOutputPanel && flowOutputs.length === 0) {
+      try {
+        const savedOutputs = localStorage.getItem(LOCALSTORAGE_OUTPUTS_KEY);
+        if (savedOutputs) {
+          setFlowOutputs(JSON.parse(savedOutputs));
+        }
+      } catch (error) {
+        console.error("Failed to load saved outputs:", error);
+      }
+    }
   };
 
   const handleAutoLayout = () => {
