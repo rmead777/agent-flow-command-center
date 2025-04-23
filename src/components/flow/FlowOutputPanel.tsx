@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
@@ -85,7 +86,6 @@ function MarkdownContent({ content }: { content: string }) {
 export function FlowOutputPanel({ outputs, isVisible, onClose, title = "Flow Execution Results" }: FlowOutputPanelProps) {
   const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [panelSize, setPanelSize] = useState(30); // Default size percentage
 
   if (!isVisible) return null;
 
@@ -119,23 +119,31 @@ export function FlowOutputPanel({ outputs, isVisible, onClose, title = "Flow Exe
       }`}
     >
       <ResizablePanelGroup 
-        direction="vertical" 
-        className="h-full"
+        direction="vertical"
+        className="h-full border-t border-gray-800"
       >
-        {!isFullscreen ? (
-          <ResizablePanel 
-            defaultSize={100} 
-            minSize={15} 
-            style={{ minHeight: '200px' }}
+        {!isFullscreen && (
+          <ResizablePanel
+            defaultSize={75}
+            id="top-content"
+            minSize={20}
           />
-        ) : null}
+        )}
+        
+        <ResizableHandle 
+          withHandle 
+          id="resize-handle"
+          className="h-4 bg-gray-800 hover:bg-gray-700" 
+        />
         
         <ResizablePanel 
-          defaultSize={isFullscreen ? 100 : panelSize} 
-          minSize={20}
+          defaultSize={isFullscreen ? 100 : 25}
+          id="output-panel"
+          minSize={15}
           maxSize={isFullscreen ? 100 : 80}
+          className="min-h-[200px]"
         >
-          <Card className="border-t border-gray-800 bg-gray-900 text-white h-full overflow-hidden rounded-b-none">
+          <Card className="bg-gray-900 text-white h-full overflow-hidden rounded-b-none">
             <div className="flex items-center justify-between p-3 border-b border-gray-800">
               <div className="flex items-center">
                 <h3 className="text-lg font-semibold">{title}</h3>
@@ -258,14 +266,6 @@ export function FlowOutputPanel({ outputs, isVisible, onClose, title = "Flow Exe
             </ScrollArea>
           </Card>
         </ResizablePanel>
-        
-        {!isFullscreen && (
-          <ResizableHandle 
-            withHandle 
-            className="h-4 bg-gray-800 hover:bg-gray-700 cursor-row-resize"
-            style={{ cursor: 'row-resize' }}
-          />
-        )}
       </ResizablePanelGroup>
     </div>
   );
