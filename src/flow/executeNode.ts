@@ -1,4 +1,3 @@
-
 import { FlowNode } from "./types";
 import { getAdapter } from "../adapters/adapterRegistry";
 import { toast } from "@/components/ui/use-toast";
@@ -58,12 +57,34 @@ export async function executeNode(node: FlowNode, input: any): Promise<any> {
     
     // Process input - ensure it's a string
     let processedInput = input;
+    
+    // Handle complex objects and array inputs
     if (Array.isArray(input)) {
-      // Join array inputs with newlines
-      processedInput = input.filter(Boolean).join("\n");
-    } else if (typeof input !== 'string') {
+      // Check if array items are objects that need special handling
+      processedInput = input.map(item => {
+        if (item && typeof item === 'object') {
+          // If the object has an output property, use that
+          if ('output' in item && item.output !== undefined) {
+            return typeof item.output === 'string' ? item.output : JSON.stringify(item.output);
+          }
+          // Otherwise stringify the whole object
+          return JSON.stringify(item);
+        }
+        return item;
+      }).filter(Boolean).join("\n");
+    } else if (input && typeof input === 'object') {
+      // If the object has an output property, use that
+      if ('output' in input && input.output !== undefined) {
+        processedInput = typeof input.output === 'string' ? input.output : JSON.stringify(input.output);
+      } else {
+        // Otherwise stringify the whole object
+        processedInput = JSON.stringify(input);
+      }
+    } else if (processedInput === undefined || processedInput === null) {
+      processedInput = "";
+    } else if (typeof processedInput !== 'string') {
       // Convert to string if not already
-      processedInput = String(input || "");
+      processedInput = String(processedInput);
     }
     
     // Build the request using the adapter
