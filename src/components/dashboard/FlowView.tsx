@@ -12,6 +12,7 @@ import {
   Edge,
   Node as ReactFlowNode,
   Panel,
+  NodeMouseHandler,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { AgentNode } from '@/components/flow/AgentNode';
@@ -23,6 +24,7 @@ import { runSimulatedFlow } from '@/flow/MockRunner';
 import { FlowNode } from '@/flow/types';
 
 // Define the AgentNodeData type to match the one in ConfigurationPanel
+// Add index signature to satisfy Record<string, unknown> constraint
 interface AgentNodeData {
   label: string;
   type: string;
@@ -41,6 +43,7 @@ interface AgentNodeData {
     retryOnError?: boolean;
     [key: string]: any;
   };
+  [key: string]: any; // Add index signature to satisfy constraint
 }
 
 const nodeTypes = {
@@ -48,13 +51,13 @@ const nodeTypes = {
 };
 
 export function FlowView() {
-  // Fix the type to use ReactFlowNode<AgentNodeData> consistently
-  const [nodes, setNodes, onNodesChange] = useNodesState(
-    initialNodes.map(node => ({
-      ...node,
-      data: node.data as AgentNodeData
-    })) as ReactFlowNode<AgentNodeData>[]
-  );
+  // Cast initialNodes to the correct type with proper typing
+  const typedInitialNodes = initialNodes.map(node => ({
+    ...node,
+    data: node.data as AgentNodeData
+  }));
+
+  const [nodes, setNodes, onNodesChange] = useNodesState(typedInitialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [isValidated, setIsValidated] = useState(false);
@@ -65,7 +68,7 @@ export function FlowView() {
     [setEdges]
   );
 
-  const onNodeClick = useCallback((_: React.MouseEvent, node: ReactFlowNode<AgentNodeData>) => {
+  const onNodeClick: NodeMouseHandler = useCallback((_: React.MouseEvent, node: ReactFlowNode) => {
     setSelectedNode(node.id);
   }, []);
 
@@ -74,17 +77,17 @@ export function FlowView() {
     : null;
 
   const updateNodeData = useCallback((nodeId: string, updater: (n: ReactFlowNode<AgentNodeData>) => ReactFlowNode<AgentNodeData>) => {
-    setNodes((ns) => ns.map(n => (n.id === nodeId ? updater(n) : n)));
+    setNodes((ns) => ns.map(n => (n.id === nodeId ? updater(n as unknown as ReactFlowNode<AgentNodeData>) : n)));
   }, [setNodes]);
 
   useEffect(() => {
-    const isValid = validateBeforeExecution(nodes as any);
+    const isValid = validateBeforeExecution(nodes);
     setIsValidated(isValid);
   }, [nodes]);
 
   const handleExecuteFlow = async () => {
     if (!isValidated) {
-      const isValid = validateBeforeExecution(nodes as any);
+      const isValid = validateBeforeExecution(nodes);
       setIsValidated(isValid);
       if (!isValid) {
         toast({
@@ -118,21 +121,24 @@ export function FlowView() {
     try {
       // Check if we have mock models to run
       const hasMockModel = nodes.some(node => 
-        node.data.modelId === 'mock-model'
+        (node.data as AgentNodeData).modelId === 'mock-model'
       );
 
       if (hasMockModel) {
         // Convert ReactFlow nodes to FlowNode format for the simulator
-        const flowNodes: FlowNode[] = nodes.map(node => ({
-          id: node.id,
-          type: node.data.type as "input" | "model" | "action" | "output",
-          modelId: node.data.modelId,
-          config: node.data.config,
-          // Find input nodes by looking at edges
-          inputNodeIds: edges
-            .filter(edge => edge.target === node.id)
-            .map(edge => edge.source)
-        }));
+        const flowNodes: FlowNode[] = nodes.map(node => {
+          const nodeData = node.data as AgentNodeData;
+          return {
+            id: node.id,
+            type: nodeData.type as "input" | "model" | "action" | "output",
+            modelId: nodeData.modelId || undefined,
+            config: nodeData.config,
+            // Find input nodes by looking at edges
+            inputNodeIds: edges
+              .filter(edge => edge.target === node.id)
+              .map(edge => edge.source)
+          };
+        });
 
         // Run the simulated flow for mock models
         const mockInput = { 'node-1': 'Test input data' }; // Simulated input
@@ -145,7 +151,7 @@ export function FlowView() {
               currentNodes.map(node => ({
                 ...node,
                 data: {
-                  ...node.data,
+                  ...(node.data as AgentNodeData),
                   status: 'idle' // Success status
                 }
               }))
@@ -164,7 +170,7 @@ export function FlowView() {
               currentNodes.map(node => ({
                 ...node,
                 data: {
-                  ...node.data,
+                  ...(node.data as AgentNodeData),
                   status: 'error'
                 }
               }))
@@ -189,7 +195,7 @@ export function FlowView() {
             currentNodes.map(node => ({
               ...node,
               data: {
-                ...node.data,
+                ...(node.data as AgentNodeData),
                 status: 'idle'
               }
             }))
@@ -209,7 +215,7 @@ export function FlowView() {
         currentNodes.map(node => ({
           ...node,
           data: {
-            ...node.data,
+            ...(node.data as AgentNodeData),
             status: 'error'
           }
         }))
