@@ -109,6 +109,20 @@ export async function executeNode(node: FlowNode, input: any): Promise<any> {
     const providerName = adapter.providerName;
     console.log(`Executing ${providerName} model: ${node.modelId}`);
     
+    // Add specific handling for Perplexity models
+    if (node.modelId === 'sonar-pro') {
+      // Optionally add any Perplexity-specific preprocessing or configuration
+      const perplexityConfig = {
+        ...config,
+        systemPrompt: config.systemPrompt || "You are an AI assistant providing concise and helpful information.",
+      };
+      
+      const requestBody = adapter.buildRequest(processedInput, perplexityConfig);
+      
+      // Use the default executeModel which now includes Perplexity
+      return await executeModel(adapter.providerName, node.modelId, requestBody);
+    }
+    
     const response = await executeModel(providerName, node.modelId, requestBody);
     
     // Handle API errors

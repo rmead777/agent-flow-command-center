@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 // Get API key from database
@@ -407,6 +406,68 @@ export async function executeDeepSeek(userId: string, modelId: string, request: 
   }
 }
 
+// Execute Perplexity request
+export async function executePerplexity(userId: string, modelId: string, request: any) {
+  try {
+    // Get API key from database
+    const apiKey = await getApiKey(userId, 'Perplexity', modelId);
+    if (!apiKey) {
+      return { 
+        error: true, 
+        status: 404,
+        message: `No API key found for Perplexity model: ${modelId}. Please add your API key in the API Keys page.` 
+      };
+    }
+    
+    // Make the request to Perplexity API
+    console.log(`Making request to Perplexity API for model: ${modelId}`);
+    
+    const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-sonar-small-128k-online', // Default model for now
+        messages: request.messages,
+        temperature: request.temperature || 0.2,
+        top_p: 0.9,
+        max_tokens: request.max_tokens || 1000,
+        return_images: false,
+        return_related_questions: false,
+        search_domain_filter: ['perplexity.ai'],
+        search_recency_filter: 'month',
+        frequency_penalty: 1,
+        presence_penalty: 0
+      }),
+    });
+    
+    if (!perplexityResponse.ok) {
+      const errorData = await perplexityResponse.json();
+      return {
+        error: true,
+        status: perplexityResponse.status,
+        message: `Perplexity API error: ${errorData.error?.message || 'Unknown error'}`,
+        details: errorData
+      };
+    }
+    
+    const data = await perplexityResponse.json();
+    return {
+      choices: [{
+        message: {
+          content: data.choices[0].message.content,
+          role: 'assistant'
+        }
+      }],
+      usage: data.usage || {}
+    };
+  } catch (error) {
+    return handleApiError(error);
+  }
+}
+
 // Unified execute function
 export async function executeModel(providerName: string, modelId: string, request: any) {
   // Get current user session
@@ -438,6 +499,8 @@ export async function executeModel(providerName: string, modelId: string, reques
       return executeXAI(userId, modelId, request);
     case 'deepseek':
       return executeDeepSeek(userId, modelId, request);
+    case 'perplexity':
+      return executePerplexity(userId, modelId, request);
     default:
       return {
         error: true,
