@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -164,7 +165,7 @@ export function ModelSettingsPanel({ node, onNodeChange }: BasePanelProps) {
                 <label className="text-sm font-medium">Enable Web Search</label>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Allows the model to search the web for recent information</p>
+                <p>Allows the model to search the web for recent information using the web_search tool</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

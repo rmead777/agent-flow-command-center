@@ -1,3 +1,4 @@
+
 import { ModelAdapter } from "./ModelAdapter";
 
 export class OpenAIAdapter implements ModelAdapter {
@@ -22,7 +23,18 @@ export class OpenAIAdapter implements ModelAdapter {
 
     // Add web search tool if enabled and model supports it
     if (config.enableWebSearch && this.modelName === "gpt-4.1") {
-      request.tools = [{ type: "web_search_preview" }];
+      request.tools = [{
+        type: "web_search_preview",
+        function: {
+          name: "web_search",
+          description: "Search the web for relevant information",
+          parameters: {
+            type: "object",
+            properties: {},
+            required: []
+          }
+        }
+      }];
     }
 
     return request;
