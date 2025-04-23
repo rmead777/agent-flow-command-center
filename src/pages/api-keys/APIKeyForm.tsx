@@ -26,19 +26,37 @@ interface Props {
 }
 
 const APIKeyForm: React.FC<Props> = ({ loading, apiKeys, onSubmit }) => {
-  const [selectedProvider, setSelectedProvider] = useState<string>("");
-  const [selectedModel, setSelectedModel] = useState<string>("");
+  const [selectedProvider, setSelectedProvider] = useState<string>(() => {
+    return localStorage.getItem("apiKeySelectedProvider") || "";
+  });
+  const [selectedModel, setSelectedModel] = useState<string>(() => {
+    return localStorage.getItem("apiKeySelectedModel") || "";
+  });
   const [apiKey, setAPIKey] = useState("");
 
-  // Reset model selection when provider changes
+  // Update selected model when provider changes
   useEffect(() => {
     setSelectedModel("");
   }, [selectedProvider]);
 
+  // Load persisted selection on mount
+  useEffect(() => {
+    const maybeSavedProvider = localStorage.getItem("apiKeySelectedProvider");
+    const maybeSavedModel = localStorage.getItem("apiKeySelectedModel");
+    if (maybeSavedProvider) setSelectedProvider(maybeSavedProvider);
+    if (maybeSavedModel) setSelectedModel(maybeSavedModel);
+  }, []);
+
+  // Persist selection to localStorage on change
+  useEffect(() => {
+    if (selectedProvider) localStorage.setItem("apiKeySelectedProvider", selectedProvider);
+    if (selectedModel) localStorage.setItem("apiKeySelectedModel", selectedModel);
+  }, [selectedProvider, selectedModel]);
+
   // Get available models for the selected provider
-  const availableModels = 
+  const availableModels =
     PROVIDERS.find((p) => p.name === selectedProvider)?.models || [];
-  
+
   // Filter out models that already have API keys
   const availableModelOptions = availableModels.filter(
     (model) =>
@@ -58,11 +76,13 @@ const APIKeyForm: React.FC<Props> = ({ loading, apiKeys, onSubmit }) => {
       });
       return;
     }
-    
+
     await onSubmit(selectedProvider, selectedModel, apiKey);
     setSelectedProvider("");
     setSelectedModel("");
     setAPIKey("");
+    localStorage.removeItem("apiKeySelectedProvider");
+    localStorage.removeItem("apiKeySelectedModel");
   }
 
   return (
@@ -73,10 +93,10 @@ const APIKeyForm: React.FC<Props> = ({ loading, apiKeys, onSubmit }) => {
       <div>
         <label className="block text-sm font-medium mb-1">Provider</label>
         <Select
-          value={selectedProvider}
+          value={selectedProvider || undefined}
           onValueChange={(value) => {
-            console.log("Provider selected:", value);
             setSelectedProvider(value);
+            localStorage.setItem("apiKeySelectedProvider", value);
           }}
           disabled={loading}
         >
@@ -92,14 +112,14 @@ const APIKeyForm: React.FC<Props> = ({ loading, apiKeys, onSubmit }) => {
           </SelectContent>
         </Select>
       </div>
-      
+
       <div>
         <label className="block text-sm font-medium mb-1">Model</label>
         <Select
-          value={selectedModel}
+          value={selectedModel || undefined}
           onValueChange={(value) => {
-            console.log("Model selected:", value);
             setSelectedModel(value);
+            localStorage.setItem("apiKeySelectedModel", value);
           }}
           disabled={
             !selectedProvider ||
@@ -125,7 +145,7 @@ const APIKeyForm: React.FC<Props> = ({ loading, apiKeys, onSubmit }) => {
           </SelectContent>
         </Select>
       </div>
-      
+
       <div>
         <label className="block text-sm font-medium mb-1">API Key</label>
         <Input
@@ -136,7 +156,7 @@ const APIKeyForm: React.FC<Props> = ({ loading, apiKeys, onSubmit }) => {
           disabled={loading || !selectedProvider || !selectedModel}
         />
       </div>
-      
+
       <Button
         type="submit"
         disabled={

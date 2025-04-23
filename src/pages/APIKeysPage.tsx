@@ -20,14 +20,16 @@ const APIKeysPage = () => {
 
   // Get current user on component mount
   useEffect(() => {
+    let alreadyFetched = false;
     const getUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       const currentUserId = session?.user?.id;
       setUserId(currentUserId);
 
-      if (currentUserId) {
-        fetchAPIKeys();
-      } else {
+      if (currentUserId && !alreadyFetched) {
+        alreadyFetched = true;
+        fetchAPIKeys(currentUserId);
+      } else if (!currentUserId) {
         toast({
           title: "Authentication Required",
           description: "Please sign in to manage your API keys",
@@ -46,7 +48,7 @@ const APIKeysPage = () => {
         setUserId(newUserId);
 
         if (newUserId) {
-          fetchAPIKeys();
+          fetchAPIKeys(newUserId);
         } else {
           setAPIKeys([]);
         }
@@ -56,23 +58,20 @@ const APIKeysPage = () => {
   }, []);
 
   // Fetch existing API keys with model information
-  const fetchAPIKeys = async () => {
-    if (!userId) return;
+  const fetchAPIKeys = async (uid?: string) => {
+    const user = uid ?? userId;
+    if (!user) return;
 
     setLoading(true);
     try {
-      console.log("Fetching API keys for user:", userId);
       const { data, error } = await supabase
         .from("api_keys")
         .select("id, provider, model, created_at")
-        .eq("user_id", userId);
+        .eq("user_id", user);
 
       if (error) throw error;
-      
-      console.log("API keys fetched:", data);
       setAPIKeys(data || []);
     } catch (error: any) {
-      console.error("Error fetching API keys:", error);
       toast({
         title: "Error fetching API keys",
         description: error.message,
