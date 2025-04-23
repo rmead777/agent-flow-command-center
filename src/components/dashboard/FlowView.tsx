@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { useNodesState, useEdgesState, addEdge, Connection, NodeMouseHandler, Node } from '@xyflow/react';
 import { FlowToolbar } from './FlowToolbar';
@@ -15,6 +16,8 @@ import { SaveAsWorkflowDialog } from "./SaveAsWorkflowDialog";
 import { LoadWorkflowDialog } from "./LoadWorkflowDialog";
 import { saveUserFlow, loadUserFlow } from "@/data/workflowStorage";
 import { Button } from "@/components/ui/button";
+import { executeNode } from '@/flow/executeNode';
+import { resolveDAG } from '@/flow/resolveDAG';
 
 interface AgentNodeData {
   label: string;
@@ -258,138 +261,163 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
 
     toast({
       title: "Flow Execution Started",
-      description: "Running the flow simulation...",
+      description: "Running the workflow...",
     });
 
     try {
-      const promptNode = nodes.find(
-        n => n.type === "inputPrompt"
-      );
+      // Find the input prompt node if it exists
+      const promptNode = nodes.find(n => n.type === "inputPrompt");
       const initialPrompt = promptNode && promptNode.data && "prompt" in promptNode.data
         ? String(promptNode.data.prompt ?? "")
         : "";
 
-      const hasMockModel = nodes.some(node =>
-        (node.data as AgentNodeData)?.modelId === 'mock-model'
+      console.log("Initial prompt:", initialPrompt);
+
+      // Convert UI nodes to FlowNodes for execution
+      const flowNodes: FlowNode[] = nodes.map(node => {
+        const nodeData = node.data as AgentNodeData | InputPromptNodeData;
+        return {
+          id: node.id,
+          type: node.type === "inputPrompt" ? "inputPrompt" : (nodeData.type as "input" | "model" | "action" | "output" | "inputPrompt"),
+          modelId: "modelId" in nodeData ? nodeData.modelId : undefined,
+          config: "config" in nodeData ? {
+            ...nodeData.config,
+            label: nodeData.label // Add label to config for reference
+          } : undefined,
+          inputNodeIds: edges
+            .filter(edge => edge.target === node.id)
+            .map(edge => edge.source),
+          prompt: (node.type === "inputPrompt" && "prompt" in nodeData)
+            ? String(nodeData.prompt ?? "")
+            : undefined
+        };
+      });
+
+      console.log("Prepared flow nodes:", flowNodes);
+
+      // Execute flow using DAG resolution and node execution
+      const outputs: FlowOutput[] = [];
+      const nodeOutputs: Record<string, any> = {}; // To store each node's output
+      
+      try {
+        // Use our DAG resolver to get execution order
+        const levels = resolveDAG(flowNodes);
+        console.log("DAG levels:", levels);
+        
+        // Execute each level in sequence
+        for (const level of levels) {
+          // Execute nodes in this level in parallel
+          const levelPromises = level.map(async (node) => {
+            const startTime = performance.now();
+            
+            try {
+              // Get inputs from connected nodes
+              let inputs: any[] = [];
+              if (node.inputNodeIds && node.inputNodeIds.length > 0) {
+                inputs = node.inputNodeIds.map(id => nodeOutputs[id]);
+              } else if (node.type !== "inputPrompt") {
+                // Use initial prompt for nodes with no inputs (except inputPrompt nodes)
+                inputs = [initialPrompt];
+              }
+              
+              // Execute the node
+              const result = await executeNode(node, inputs);
+              nodeOutputs[node.id] = result;
+              
+              const executionTime = Math.round(performance.now() - startTime);
+              
+              // Store the output
+              outputs.push({
+                nodeId: node.id,
+                nodeName: node.config?.label || `Node ${node.id}`,
+                nodeType: node.type,
+                modelId: node.modelId,
+                timestamp: new Date().toISOString(),
+                input: inputs.length === 1 ? inputs[0] : inputs,
+                output: result,
+                executionTime
+              });
+              
+              return { nodeId: node.id, success: true };
+            } catch (error) {
+              console.error(`Error executing node ${node.id}:`, error);
+              
+              // Store error result
+              const executionTime = Math.round(performance.now() - startTime);
+              outputs.push({
+                nodeId: node.id,
+                nodeName: node.config?.label || `Node ${node.id}`,
+                nodeType: "error",
+                modelId: node.modelId,
+                timestamp: new Date().toISOString(),
+                input: node.inputNodeIds?.map(id => nodeOutputs[id]) || [],
+                output: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+                executionTime
+              });
+              
+              // Store error as output to allow flow to continue when possible
+              nodeOutputs[node.id] = `Error: ${error instanceof Error ? error.message : "Unknown error"}`;
+              
+              return { nodeId: node.id, success: false };
+            }
+          });
+          
+          // Wait for all nodes in this level to complete
+          await Promise.all(levelPromises);
+        }
+      } catch (error) {
+        console.error("Flow execution error:", error);
+        toast({
+          title: "Flow Execution Error",
+          description: error instanceof Error ? error.message : "Unknown error in flow",
+          variant: "destructive"
+        });
+        
+        outputs.push({
+          nodeId: "error",
+          nodeName: "Flow Engine",
+          nodeType: "error",
+          timestamp: new Date().toISOString(),
+          input: null,
+          output: `Flow Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+          executionTime: 0
+        });
+      }
+
+      // Update node statuses based on execution results
+      setNodes(currentNodes =>
+        currentNodes.map(node => {
+          const nodeOutput = outputs.find(output => output.nodeId === node.id);
+          const hasError = nodeOutput?.nodeType === "error";
+          
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              status: hasError ? 'error' : 'idle',
+              metrics: {
+                ...(node.data as AgentNodeData).metrics,
+                tasksProcessed: ((node.data as AgentNodeData).metrics?.tasksProcessed || 0) + (nodeOutput ? 1 : 0),
+                latency: nodeOutput?.executionTime || 0,
+                errorRate: hasError ? 100 : 0
+              }
+            }
+          };
+        })
       );
 
-      if (hasMockModel) {
-        const flowNodes: FlowNode[] = nodes.map(node => {
-          const nodeData = node.data as AgentNodeData;
-          return {
-            id: node.id,
-            type: nodeData.type as "input" | "model" | "action" | "output" | "inputPrompt",
-            modelId: nodeData.modelId || undefined,
-            config: {
-              ...nodeData.config,
-              label: nodeData.label // Add label to config for reference
-            },
-            inputNodeIds: edges
-              .filter(edge => edge.target === node.id)
-              .map(edge => edge.source),
-            prompt: (node.type === "inputPrompt" && "prompt" in node.data)
-              ? String((node.data as any).prompt ?? "")
-              : undefined
-          };
-        });
+      // Show the outputs
+      setFlowOutputs(outputs);
+      setShowOutputPanel(true);
 
-        const nodeMap: Record<string, FlowNode> = {};
-        flowNodes.forEach(node => { nodeMap[node.id] = node; });
+      // Store outputs in history and localStorage
+      addFlowOutputsToHistory(outputs);
+      localStorage.setItem(LOCALSTORAGE_OUTPUTS_KEY, JSON.stringify(outputs));
 
-        const rootNodes = flowNodes.filter(n => !n.inputNodeIds || n.inputNodeIds.length === 0);
-
-        const mockResults: { outputs: any[] } = { outputs: [] };
-        const nodeOutputs: Record<string, any> = {};
-
-        async function executeNodeAndDependents(node: FlowNode) {
-          let input;
-          if (node.type === "inputPrompt") {
-            input = node.prompt ?? "";
-            nodeOutputs[node.id] = input;
-            mockResults.outputs.push({
-              nodeId: node.id,
-              output: input,
-              executionTime: 1,
-              error: null
-            });
-          } else if (!node.inputNodeIds || node.inputNodeIds.length === 0) {
-            input = initialPrompt;
-          } else {
-            input = node.inputNodeIds.map(pid => nodeOutputs[pid]).join("\n");
-          }
-
-          if (node.modelId === "mock-model") {
-            await new Promise(res => setTimeout(res, 2));
-            const output = `[Simulated output for: ${input}]`;
-            nodeOutputs[node.id] = output;
-            mockResults.outputs.push({
-              nodeId: node.id,
-              output,
-              executionTime: 3,
-              error: null
-            });
-          }
-
-          const dependents = flowNodes.filter(n => n.inputNodeIds && n.inputNodeIds.includes(node.id));
-          for (const dep of dependents) {
-            await executeNodeAndDependents(dep);
-          }
-        }
-
-        for (const root of rootNodes) {
-          await executeNodeAndDependents(root);
-        }
-
-        const outputsUnique = Array.from(
-          new Map(mockResults.outputs.map(o => [o.nodeId, o])).values()
-        );
-
-        setNodes(currentNodes =>
-          currentNodes.map(node => {
-            const nodeOutput = outputsUnique.find(output => output.nodeId === node.id);
-            return {
-              ...node,
-              data: {
-                ...(node.data as AgentNodeData),
-                status: 'idle',
-                metrics: {
-                  ...(node.data as AgentNodeData).metrics,
-                  tasksProcessed: ((node.data as AgentNodeData).metrics?.tasksProcessed || 0) + (nodeOutput ? 1 : 0),
-                  latency: nodeOutput?.executionTime || 0,
-                  errorRate: 0
-                }
-              }
-            };
-          })
-        );
-
-        setFlowOutputs(outputsUnique);
-        setShowOutputPanel(true);
-
-        addFlowOutputsToHistory(outputsUnique);
-        localStorage.setItem(LOCALSTORAGE_OUTPUTS_KEY, JSON.stringify(outputsUnique));
-
-        toast({
-          title: "Flow Execution Completed",
-          description: "Mock simulation has finished successfully",
-        });
-      } else {
-        toast({
-          title: "Flow Validated",
-          description: "Flow validated successfully. Connection to real models requires additional setup.",
-        });
-        setTimeout(() => {
-          setNodes(currentNodes =>
-            currentNodes.map(node => ({
-              ...node,
-              data: {
-                ...(node.data as AgentNodeData),
-                status: 'idle'
-              }
-            }))
-          );
-        }, 2000);
-      }
+      toast({
+        title: "Flow Execution Completed",
+        description: "Workflow has finished execution",
+      });
     } catch (error) {
       console.error("Flow execution error:", error);
       toast({

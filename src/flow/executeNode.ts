@@ -8,6 +8,12 @@ import { validateFlowNodeConfig } from "../utils/modelValidation";
  * Calls the appropriate adapter for a given node.
  */
 export async function executeNode(node: FlowNode, input: any): Promise<any> {
+  // Handle InputPrompt node type
+  if (node.type === "inputPrompt") {
+    console.log("Executing input prompt node with prompt:", node.prompt);
+    return node.prompt || "";
+  }
+
   if (!node.modelId) {
     throw new Error("Node missing modelId");
   }
@@ -45,8 +51,26 @@ export async function executeNode(node: FlowNode, input: any): Promise<any> {
   }
   
   try {
+    console.log(`Executing node ${node.id} with input:`, input);
+    
+    // Process input - ensure it's a string
+    let processedInput = input;
+    if (Array.isArray(input)) {
+      // Join array inputs with newlines
+      processedInput = input.filter(Boolean).join("\n");
+    } else if (typeof input !== 'string') {
+      // Convert to string if not already
+      processedInput = String(input || "");
+    }
+    
     // Build the request using the adapter
-    const requestBody = adapter.buildRequest(input, config);
+    const requestBody = adapter.buildRequest(processedInput, config);
+    
+    // For mock model, simulate a response
+    if (node.modelId === 'mock-model') {
+      console.log("Using mock model for", node.id);
+      return `[Mock response for node ${node.id}: ${processedInput}]`;
+    }
     
     // Make the API call to our edge function
     const response = await fetch(`/api/execute/${adapter.providerName.toLowerCase()}`, {

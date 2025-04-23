@@ -9,8 +9,10 @@ export interface FlowNode {
     maxTokens?: number;
     streamResponse?: boolean;
     retryOnError?: boolean;
+    label?: string; // Added label for reference
     [key: string]: any;
   };
   inputNodeIds?: string[];
   prompt?: string;
+  output?: any; // Store node output during execution
 }
