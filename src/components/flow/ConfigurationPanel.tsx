@@ -1,4 +1,3 @@
-
 import { X, Play, Pause, Trash, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,26 +55,35 @@ export function ConfigurationPanel({ node, onNodeChange, onClose }: Configuratio
   // Helper: Get full models by provider mapping
   const modelsByProvider = getModelsByProvider();
 
-  // Initialize tempProvider and restore saved provider when component mounts or node changes
+  // --- PERSIST/RESTORE LOGIC FOR PROVIDER/MODEL SELECTIONS ---
+  // 1. Restore provider/model from localStorage when panel mounts or the node changes
   useEffect(() => {
-    if (data.modelId && getAdapter(data.modelId)) {
-      // If node already has a model, use its provider
-      setTempProvider(getAdapter(data.modelId)!.providerName);
-    } else {
-      // Try to restore from localStorage based on node ID
-      const savedProvider = localStorage.getItem(getNodeStorageKey(node.id, 'provider'));
-      if (savedProvider) {
-        setTempProvider(savedProvider);
-        
-        // Also restore model if available
-        const savedModel = localStorage.getItem(getNodeStorageKey(node.id, 'model'));
-        if (savedModel && modelsByProvider[savedProvider]?.includes(savedModel)) {
-          // Only set model if it's valid for the provider
-          updateModel(savedModel);
-        }
+    // Fetch from storage on every mount/node change (prevents reverting to defaults)
+    const savedProvider = localStorage.getItem(getNodeStorageKey(node.id, 'provider'));
+    const savedModel = localStorage.getItem(getNodeStorageKey(node.id, 'model'));
+
+    if (savedProvider && modelsByProvider[savedProvider]) {
+      setTempProvider(savedProvider);
+
+      // Always update node data when restoring, if different
+      if (savedModel && modelsByProvider[savedProvider]?.includes(savedModel)) {
+        onNodeChange(prev => ({
+          ...prev,
+          data: {
+            ...prev.data,
+            modelId: savedModel,
+          }
+        }));
       }
+    } else if (data.modelId && getAdapter(data.modelId)) {
+      // Fallback: use model/provider from node data if valid
+      setTempProvider(getAdapter(data.modelId)!.providerName);
+      // Don't change modelId (already set)
+    } else {
+      setTempProvider("");
     }
-  }, [node.id, data.modelId]);
+    // eslint-disable-next-line
+  }, [node.id]);
 
   // Controlled fields: always use node-prop as source of truth. Local state only for slider, but write-through.
   const selectedProvider = tempProvider;
@@ -124,14 +132,14 @@ export function ConfigurationPanel({ node, onNodeChange, onClose }: Configuratio
     }));
   };
 
+  // --- Existing updateProvider now persists to localStorage ---
   const updateProvider = (provider: string) => {
-    // Save provider to localStorage
     localStorage.setItem(getNodeStorageKey(node.id, 'provider'), provider);
-    
-    // Update local state
+
     setTempProvider(provider);
-    
-    // Clear modelId, user must re-select model for provider
+
+    // Clear modelId and persist blank model selection
+    localStorage.removeItem(getNodeStorageKey(node.id, 'model'));
     onNodeChange(prev => ({
       ...prev,
       data: {
@@ -145,9 +153,8 @@ export function ConfigurationPanel({ node, onNodeChange, onClose }: Configuratio
   };
 
   const updateModel = (modelId: string) => {
-    // Save model to localStorage
     localStorage.setItem(getNodeStorageKey(node.id, 'model'), modelId);
-    
+
     onNodeChange(prev => ({
       ...prev,
       data: {
@@ -164,6 +171,7 @@ export function ConfigurationPanel({ node, onNodeChange, onClose }: Configuratio
 
   if (!node) return null;
 
+  // --- Clarify status: If status === 'active', show pause button ("running") ---
   const isRunning = data.status === 'active';
 
   return (
@@ -185,7 +193,7 @@ export function ConfigurationPanel({ node, onNodeChange, onClose }: Configuratio
               ? 'bg-red-900/40 text-red-400'
               : 'bg-yellow-900/40 text-yellow-400'
           }`}>
-            {data.status}
+            {data.status === 'active' ? 'Running' : data.status === 'idle' ? 'Idle' : 'Error'}
           </span>
         </div>
         <div className="text-xs text-gray-400">ID: {node.id}</div>
