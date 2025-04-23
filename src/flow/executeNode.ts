@@ -4,6 +4,7 @@ import { getAdapter } from "../adapters/adapterRegistry";
 import { toast } from "@/components/ui/use-toast";
 import { validateFlowNodeConfig } from "../utils/modelValidation";
 import { supabase } from "@/integrations/supabase/client";
+import { executeModel } from "@/api/executeApi";
 
 /**
  * Calls the appropriate adapter for a given node.
@@ -79,32 +80,16 @@ export async function executeNode(node: FlowNode, input: any): Promise<any> {
       throw new Error("Authentication required. Please sign in to execute real model calls.");
     }
     
-    // Check if API endpoint exists before making call
-    const providerName = adapter.providerName.toLowerCase();
-    const endpointUrl = `/api/execute/${providerName}`;
+    // Execute the model using our API functions
+    const providerName = adapter.providerName;
+    console.log(`Executing ${providerName} model: ${node.modelId}`);
     
-    console.log(`Making API call to ${endpointUrl} for model ${node.modelId}`);
+    const response = await executeModel(providerName, node.modelId, requestBody);
     
-    // Make the API call to our edge function
-    const response = await fetch(endpointUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        modelId: node.modelId,
-        request: requestBody
-      })
-    });
-    
-    if (!response.ok) {
-      let errorMessage = `API error: ${response.statusText}`;
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorMessage;
-      } catch (e) {
-        // If we can't parse the error, use the default message
-      }
-      
-      console.error(`Error response from ${endpointUrl}:`, errorMessage);
+    // Handle API errors
+    if (response.error) {
+      const errorMessage = response.message || 'Unknown API error';
+      console.error(`Error from API:`, errorMessage);
       
       toast({
         title: "API Error",
@@ -115,17 +100,15 @@ export async function executeNode(node: FlowNode, input: any): Promise<any> {
       throw new Error(errorMessage);
     }
     
-    const rawResponse = await response.json();
-    
     // Handle potential empty response
-    if (!rawResponse) {
+    if (!response) {
       throw new Error("Empty response from API");
     }
     
-    console.log(`Got response from ${endpointUrl}:`, rawResponse);
+    console.log(`Got response from ${providerName}:`, response);
     
     // Parse the response using the adapter
-    return adapter.parseResponse(rawResponse);
+    return adapter.parseResponse(response);
   } catch (error: any) {
     console.error(`Execution error for node ${node.id}:`, error);
     
