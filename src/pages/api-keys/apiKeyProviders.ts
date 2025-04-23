@@ -51,14 +51,20 @@ export const PROVIDERS = [
     name: 'XAI',
     models: [
       'grok-3-beta',
-      'grok-3-mini-beta'
+      'grok-3-mini-beta',
+      // Include the uppercase versions for backward compatibility
+      'Grok-3-beta',
+      'Grok-3-mini-beta'
     ]
   },
   {
     name: 'DeepSeek',
     models: [
       'deepseek-r1',
-      'deepseek-v3-0324'
+      'deepseek-v3-0324',
+      // Include the uppercase versions for backward compatibility
+      'DeepSeek-R1',
+      'DeepSeek-V3-0324'
     ]
   },
   // Add Mock provider for simulation/testing

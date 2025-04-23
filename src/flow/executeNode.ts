@@ -12,14 +12,21 @@ export async function executeNode(node: FlowNode, input: any): Promise<any> {
     throw new Error("Node missing modelId");
   }
   
-  // Normalize model ID to match registry (handle case sensitivity)
-  const modelId = node.modelId.toLowerCase();
+  // Try to get adapter with original model ID first
+  let adapter = getAdapter(node.modelId);
   
-  // Get adapter from registry
-  const adapter = getAdapter(modelId) || getAdapter(node.modelId);
+  // If not found, try normalized version (lowercase)
+  if (!adapter && typeof node.modelId === 'string') {
+    const normalizedModelId = node.modelId.toLowerCase();
+    adapter = getAdapter(normalizedModelId);
+    
+    if (adapter) {
+      console.log(`Found adapter using normalized model ID: ${normalizedModelId}`);
+    }
+  }
   
   if (!adapter) {
-    throw new Error(`Missing adapter for model: ${node.modelId} (normalized: ${modelId})`);
+    throw new Error(`Missing adapter for model: ${node.modelId}`);
   }
   
   // Use default config if none provided
