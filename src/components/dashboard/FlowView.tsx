@@ -48,8 +48,12 @@ const nodeTypes = {
 };
 
 export function FlowView() {
-  const [nodes, setNodes, onNodesChange] = useNodesState<AgentNodeData>(
-    initialNodes as ReactFlowNode<AgentNodeData>[]
+  // Fix the type to use ReactFlowNode<AgentNodeData> consistently
+  const [nodes, setNodes, onNodesChange] = useNodesState(
+    initialNodes.map(node => ({
+      ...node,
+      data: node.data as AgentNodeData
+    })) as ReactFlowNode<AgentNodeData>[]
   );
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
@@ -61,24 +65,26 @@ export function FlowView() {
     [setEdges]
   );
 
-  const onNodeClick = (_: React.MouseEvent, node: ReactFlowNode<AgentNodeData>) => {
+  const onNodeClick = useCallback((_: React.MouseEvent, node: ReactFlowNode<AgentNodeData>) => {
     setSelectedNode(node.id);
-  };
+  }, []);
 
-  const selectedNodeData = selectedNode ? nodes.find(n => n.id === selectedNode) : null;
+  const selectedNodeData = selectedNode 
+    ? nodes.find(n => n.id === selectedNode) 
+    : null;
 
-  const updateNodeData = (nodeId: string, updater: (n: ReactFlowNode<AgentNodeData>) => ReactFlowNode<AgentNodeData>) => {
+  const updateNodeData = useCallback((nodeId: string, updater: (n: ReactFlowNode<AgentNodeData>) => ReactFlowNode<AgentNodeData>) => {
     setNodes((ns) => ns.map(n => (n.id === nodeId ? updater(n) : n)));
-  };
+  }, [setNodes]);
 
   useEffect(() => {
-    const isValid = validateBeforeExecution(nodes);
+    const isValid = validateBeforeExecution(nodes as any);
     setIsValidated(isValid);
   }, [nodes]);
 
   const handleExecuteFlow = async () => {
     if (!isValidated) {
-      const isValid = validateBeforeExecution(nodes);
+      const isValid = validateBeforeExecution(nodes as any);
       setIsValidated(isValid);
       if (!isValid) {
         toast({
@@ -240,7 +246,8 @@ export function FlowView() {
             <Controls className="bg-gray-800 text-white" />
             <MiniMap 
               nodeColor={(node) => {
-                switch (node.data.type) {
+                const nodeData = node.data as AgentNodeData;
+                switch (nodeData.type) {
                   case 'input':
                     return '#6366f1';
                   case 'action':
