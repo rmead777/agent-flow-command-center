@@ -1,4 +1,3 @@
-
 import { X, Play, Pause, Trash, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +18,24 @@ import { useState, useEffect } from 'react';
 import { Node as ReactFlowNode } from '@xyflow/react';
 import { toast } from '@/components/ui/use-toast';
 
+const COLOR_OPTIONS = [
+  "#8E9196", // Neutral Gray
+  "#9b87f5", // Primary Purple
+  "#7E69AB", // Secondary Purple
+  "#F2FCE2", // Soft Green
+  "#FEF7CD", // Soft Yellow
+  "#FEC6A1", // Soft Orange
+  "#E5DEFF", // Soft Purple
+  "#FFDEE2", // Soft Pink
+  "#FDE1D3", // Soft Peach
+  "#D3E4FD", // Soft Blue
+  "#8B5CF6", // Vivid Purple
+  "#D946EF", // Magenta Pink
+  "#F97316", // Bright Orange
+  "#0EA5E9", // Ocean Blue
+  "#33C3F0", // Sky Blue
+];
+
 interface AgentNodeData extends Record<string, unknown> {
   label: string;
   type: string;
@@ -37,6 +54,7 @@ interface AgentNodeData extends Record<string, unknown> {
     retryOnError?: boolean;
     [key: string]: any;
   };
+  color?: string;
 }
 
 interface ConfigurationPanelProps {
@@ -61,6 +79,7 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
     const savedProvider = localStorage.getItem(getNodeStorageKey(node.id, 'provider'));
     const savedModel = localStorage.getItem(getNodeStorageKey(node.id, 'model'));
     const savedType = localStorage.getItem(getNodeStorageKey(node.id, 'type'));
+    const savedColor = localStorage.getItem(getNodeStorageKey(node.id, 'color'));
 
     if (savedProvider && modelsByProvider[savedProvider]) {
       setTempProvider(savedProvider);
@@ -95,6 +114,16 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
     } else {
       setTempAgentType("");
     }
+
+    if (savedColor) {
+      onNodeChange(prev => ({
+        ...prev,
+        data: {
+          ...prev.data,
+          color: savedColor
+        }
+      }));
+    }
     setHasShownMockHint(false);
   }, [node.id]);
 
@@ -102,6 +131,7 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
   const selectedModel = data.modelId || "";
   const availableModels = selectedProvider ? modelsByProvider[selectedProvider] || [] : [];
   const selectedAgentType = data.type || tempAgentType || "";
+  const color = data.color || "";
 
   const systemPrompt = data.config?.systemPrompt || "";
   const temperature = data.config?.temperature ?? 0.7;
@@ -110,7 +140,6 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
   const agentName = data.label || "";
   const agentType = selectedAgentType;
 
-  // Handlers (EDITED for live updates)
   const updateConfig = (key: string, value: any) => {
     onNodeChange(prev => ({
       ...prev,
@@ -124,7 +153,6 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
     }));
   };
 
-  // This handler updates name live, so it will be used and saved
   const updateLabel = (value: string) => {
     onNodeChange(prev => ({
       ...prev,
@@ -172,6 +200,16 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
       data: {
         ...prev.data,
         modelId
+      }
+    }));
+  };
+
+  const updateColor = (color: string) => {
+    onNodeChange(prev => ({
+      ...prev,
+      data: {
+        ...prev.data,
+        color
       }
     }));
   };
@@ -363,6 +401,29 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
             checked={retryOnError}
             onCheckedChange={val => updateConfig("retryOnError", val)}  
           />
+        </div>
+
+        <div className="mb-4">
+          <label className="block mb-2 text-sm font-medium">Node Color</label>
+          <div className="flex flex-wrap gap-2">
+            {COLOR_OPTIONS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                title={c}
+                aria-label={`Pick color ${c}`}
+                onClick={() => updateColor(c)}
+                className={`w-7 h-7 rounded-full border-2 flex items-center justify-center cursor-pointer ${
+                  color === c ? "border-amber-400 ring-2 ring-amber-400" : "border-gray-700"
+                }`}
+                style={{ background: c }}
+              >
+                {color === c && (
+                  <span className="w-3 h-3 rounded-full bg-white/80 block"></span>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

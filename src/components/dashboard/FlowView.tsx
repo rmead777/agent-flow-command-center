@@ -36,6 +36,7 @@ interface AgentNodeData {
     retryOnError?: boolean;
     [key: string]: any;
   };
+  color?: string;
   [key: string]: any;
 }
 
@@ -187,29 +188,6 @@ export const FlowView = forwardRef<FlowViewHandle, FlowViewProps>(({ masterUserP
         ? { x: last.position.x + 80, y: last.position.y + 60 }
         : { x: 100, y: 100 + nodes.length * 40 };
 
-    if (typeOverride === "inputPrompt") {
-      setNodes((nds) => [
-        ...nds,
-        {
-          id: newId,
-          type: "inputPrompt",
-          position: pos,
-          data: {
-            label: "User Prompt",
-            type: "input",
-            status: "idle",
-            prompt: workflowPrompt,
-            onPromptChange: (p: string) => setWorkflowPrompt(p)
-          } as InputPromptNodeData
-        }
-      ]);
-      toast({
-        title: "Prompt Node Added",
-        description: `User prompt node '${newId}' created.`,
-      });
-      return;
-    }
-
     setNodes((nds) => [
       ...nds,
       {
@@ -230,7 +208,8 @@ export const FlowView = forwardRef<FlowViewHandle, FlowViewProps>(({ masterUserP
             temperature: 0.7,
             streamResponse: true,
             retryOnError: true,
-          }
+          },
+          color: ""
         } as AgentNodeData
       }
     ]);
@@ -481,8 +460,31 @@ export const FlowView = forwardRef<FlowViewHandle, FlowViewProps>(({ masterUserP
     setShowOutputPanel(!showOutputPanel);
   };
 
-  const handleAutoLayout = () =>
-    toast({ title: "Auto Layout", description: "This will be implemented soon!" });
+  const handleAutoLayout = () => {
+    const nodeWidth = 180;
+    const nodeHeight = 120;
+    const spacingX = 60;
+    const spacingY = 60;
+    const maxCols = 5;
+
+    setNodes((currNodes) => {
+      return currNodes.map((node, idx) => {
+        const col = idx % maxCols;
+        const row = Math.floor(idx / maxCols);
+        return {
+          ...node,
+          position: {
+            x: 100 + col * (nodeWidth + spacingX),
+            y: 100 + row * (nodeHeight + spacingY),
+          }
+        };
+      });
+    });
+    toast({
+      title: "Auto Layout Complete",
+      description: "Nodes have been arranged automatically.",
+    });
+  };
 
   return (
     <div className="h-full w-full rounded-lg border border-gray-800 bg-gray-900 flex flex-col relative">
@@ -514,14 +516,6 @@ export const FlowView = forwardRef<FlowViewHandle, FlowViewProps>(({ masterUserP
               showOutputPanel={showOutputPanel}
               flowOutputsLength={flowOutputs.length}
             />
-            <Button
-              variant="outline"
-              className="text-blue-300 px-3 py-1 border-blue-400"
-              onClick={() => handleAddNode("inputPrompt")}
-              title="Add User Prompt Node"
-            >
-              Add Prompt Node
-            </Button>
             <Button variant="outline" className="text-gray-300 px-3 py-1" onClick={handleLoadWorkflow}>
               Load Workflow
             </Button>
