@@ -112,8 +112,13 @@ export async function executeNode(node: FlowNode, input: any): Promise<any> {
     
     // Add specific handling for Perplexity models
     if (node.modelId === 'sonar-pro') {
-      // Type the Perplexity config correctly
-      const perplexityConfig = {
+      // Properly type the config to access systemPrompt
+      const perplexityConfig: { 
+        systemPrompt: string;
+        temperature?: number;
+        maxTokens?: number;
+        [key: string]: any;
+      } = {
         ...config,
         systemPrompt: config.systemPrompt || "You are an AI assistant providing concise and helpful information.",
       };
