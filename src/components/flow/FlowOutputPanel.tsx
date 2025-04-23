@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
@@ -113,12 +112,6 @@ export function FlowOutputPanel({ outputs, isVisible, onClose, title = "Flow Exe
     setIsFullscreen(!isFullscreen);
   };
 
-  const handlePanelResize = (sizes: number[]) => {
-    if (sizes[0]) {
-      setPanelSize(sizes[0]);
-    }
-  };
-
   return (
     <div 
       className={`fixed bottom-0 left-0 right-0 transition-all duration-300 ease-in-out z-30 ${
@@ -127,10 +120,21 @@ export function FlowOutputPanel({ outputs, isVisible, onClose, title = "Flow Exe
     >
       <ResizablePanelGroup 
         direction="vertical" 
-        onLayout={handlePanelResize} 
         className="h-full"
       >
-        <ResizablePanel defaultSize={isFullscreen ? 100 : panelSize}>
+        {!isFullscreen ? (
+          <ResizablePanel 
+            defaultSize={100} 
+            minSize={15} 
+            style={{ minHeight: '200px' }}
+          />
+        ) : null}
+        
+        <ResizablePanel 
+          defaultSize={isFullscreen ? 100 : panelSize} 
+          minSize={20}
+          maxSize={isFullscreen ? 100 : 80}
+        >
           <Card className="border-t border-gray-800 bg-gray-900 text-white h-full overflow-hidden rounded-b-none">
             <div className="flex items-center justify-between p-3 border-b border-gray-800">
               <div className="flex items-center">
@@ -254,8 +258,13 @@ export function FlowOutputPanel({ outputs, isVisible, onClose, title = "Flow Exe
             </ScrollArea>
           </Card>
         </ResizablePanel>
+        
         {!isFullscreen && (
-          <ResizableHandle withHandle className="h-2 bg-gray-800 hover:bg-gray-700" />
+          <ResizableHandle 
+            withHandle 
+            className="h-4 bg-gray-800 hover:bg-gray-700 cursor-row-resize"
+            style={{ cursor: 'row-resize' }}
+          />
         )}
       </ResizablePanelGroup>
     </div>
