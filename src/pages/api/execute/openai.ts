@@ -1,5 +1,5 @@
 
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { getApiKey, handleApiError } from './index';
 import { supabase } from "@/integrations/supabase/client";
 

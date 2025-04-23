@@ -1,5 +1,5 @@
 
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { supabase } from "@/integrations/supabase/client";
 
 export async function getApiKey(userId: string, provider: string, model: string): Promise<string | null> {
