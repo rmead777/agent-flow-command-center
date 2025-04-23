@@ -12,9 +12,14 @@ export async function executeNode(node: FlowNode, input: any): Promise<any> {
     throw new Error("Node missing modelId");
   }
   
-  const adapter = getAdapter(node.modelId);
+  // Normalize model ID to match registry (handle case sensitivity)
+  const modelId = node.modelId.toLowerCase();
+  
+  // Get adapter from registry
+  const adapter = getAdapter(modelId) || getAdapter(node.modelId);
+  
   if (!adapter) {
-    throw new Error(`Missing adapter for model: ${node.modelId}`);
+    throw new Error(`Missing adapter for model: ${node.modelId} (normalized: ${modelId})`);
   }
   
   // Use default config if none provided
@@ -53,14 +58,22 @@ export async function executeNode(node: FlowNode, input: any): Promise<any> {
     
     const rawResponse = await response.json();
     
+    // Handle potential empty response
+    if (!rawResponse) {
+      throw new Error("Empty response from API");
+    }
+    
     // Parse the response using the adapter
     return adapter.parseResponse(rawResponse);
   } catch (error: any) {
+    console.error(`Execution error for node ${node.id}:`, error);
+    
     toast({
       title: "Execution Error",
-      description: error.message,
+      description: error.message || "Unknown execution error",
       variant: "destructive"
     });
+    
     throw error;
   }
 }

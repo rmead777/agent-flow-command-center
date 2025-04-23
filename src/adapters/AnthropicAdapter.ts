@@ -5,13 +5,22 @@ export class AnthropicAdapter implements ModelAdapter {
   modelName: string;
   providerName = "Anthropic";
   supportedFeatures = ["text"];
+  isReasoningMode: boolean;
 
   constructor(modelName = "claude-3.7-sonnet") {
-    this.modelName = modelName;
+    // Check if this is the reasoning variant
+    this.isReasoningMode = modelName.includes("-reasoning");
+    
+    // Store the base model name without the reasoning suffix
+    this.modelName = modelName.replace("-reasoning", "");
   }
 
   buildRequest(input: string, config: any) {
-    return {
+    // Enable reasoning mode either through the model name or config
+    const useReasoning = this.isReasoningMode || config.enableReasoning;
+    
+    // Create standard request object
+    const request = {
       model: this.modelName,
       messages: [
         { role: "system", content: config.systemPrompt || "You are Claude, a helpful AI assistant." },
@@ -20,6 +29,16 @@ export class AnthropicAdapter implements ModelAdapter {
       temperature: config.temperature ?? 0.7,
       max_tokens: config.maxTokens ?? 512,
     };
+    
+    // Add reasoning flag if needed
+    if (useReasoning) {
+      return {
+        ...request,
+        reasoning: true, // Enable Claude's reasoning capability
+      };
+    }
+    
+    return request;
   }
 
   parseResponse(response: any) {
@@ -39,10 +58,20 @@ export class AnthropicAdapter implements ModelAdapter {
   }
 
   getDefaultConfig() {
-    return {
+    const baseConfig = {
       temperature: 0.7,
       maxTokens: 512,
       systemPrompt: "You are Claude, a helpful AI assistant."
     };
+    
+    // Add enableReasoning flag for the reasoning variant
+    if (this.isReasoningMode) {
+      return {
+        ...baseConfig,
+        enableReasoning: true
+      };
+    }
+    
+    return baseConfig;
   }
 }

@@ -15,7 +15,7 @@ export const adapterRegistry: Record<string, ModelAdapter> = {
   "gpt-4.1": new OpenAIAdapter("gpt-4.1"),
   "gpt-4o-mini": new OpenAIAdapter("gpt-4o-mini"),
   "gpt-4.5-preview": new OpenAIAdapter("gpt-4.5-preview"),
-  // NEW OpenAI MODELS
+  // OpenAI o-models with normalized IDs
   "o3": new OpenAIAdapter("o3"),
   "o3-mini": new OpenAIAdapter("o3-mini"),
   "o4-mini": new OpenAIAdapter("o4-mini"),
@@ -24,11 +24,14 @@ export const adapterRegistry: Record<string, ModelAdapter> = {
   "claude-3.7-sonnet": new AnthropicAdapter("claude-3.7-sonnet"),
   "claude-3.7-opus": new AnthropicAdapter("claude-3.7-opus"),
   "claude-3.5-sonnet": new AnthropicAdapter("claude-3.5-sonnet"),
+  "claude-3.7-sonnet-reasoning": new AnthropicAdapter("claude-3.7-sonnet"), // Same model, reasoning toggled via config
   
   // Google Models
   "gemini-2.5-flash": new GoogleAdapter("gemini-2.5-flash"),
   "gemini-2.5-pro": new GoogleAdapter("gemini-2.5-pro"),
   "gemini-1.5-flash": new GoogleAdapter("gemini-1.5-flash"),
+  "gemini-2.5-flash-preview-04-17": new GoogleAdapter("gemini-2.5-flash-preview-04-17"),
+  "gemini-2.5-pro-preview": new GoogleAdapter("gemini-2.5-pro-preview"),
   
   // Mistral Models
   "mistral-large": new MistralAdapter("mistral-large"),
@@ -40,13 +43,20 @@ export const adapterRegistry: Record<string, ModelAdapter> = {
   "command-r-plus": new CohereAdapter("command-r-plus"),
   "command-light": new CohereAdapter("command-light"),
 
-  // XAI Models
-  "Grok-3-beta": new XAIAdapter("Grok-3-beta"),
-  "Grok-3-mini-beta": new XAIAdapter("Grok-3-mini-beta"),
+  // XAI Models normalized to lowercase
+  "grok-3-beta": new XAIAdapter("grok-3-beta"),
+  "grok-3-mini-beta": new XAIAdapter("grok-3-mini-beta"),
+  // Keep legacy uppercase versions for backward compatibility
+  "Grok-3-beta": new XAIAdapter("grok-3-beta"),
+  "Grok-3-mini-beta": new XAIAdapter("grok-3-mini-beta"),
 
-  // DeepSeek Models
-  "DeepSeek-R1": new DeepSeekAdapter("DeepSeek-R1"),
-  "DeepSeek-V3-0324": new DeepSeekAdapter("DeepSeek-V3-0324"),
+  // DeepSeek Models normalized
+  "deepseek-r1": new DeepSeekAdapter("deepseek-r1"),
+  "deepseek-v3-0324": new DeepSeekAdapter("deepseek-v3-0324"),
+  // Keep legacy versions for backward compatibility
+  "DeepSeek-R1": new DeepSeekAdapter("deepseek-r1"),
+  "DeepSeek-V3-0324": new DeepSeekAdapter("deepseek-v3-0324"),
+  
   // Mock Model
   "mock-model": new MockAdapter(),
 };

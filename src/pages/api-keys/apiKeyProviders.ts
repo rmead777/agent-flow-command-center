@@ -7,7 +7,6 @@ export const PROVIDERS = [
       'gpt-4.1', 
       'gpt-4o-mini', 
       'gpt-4.5-preview',
-      // ADDED below:
       'o3', 
       'o3-mini', 
       'o4-mini',
@@ -18,7 +17,8 @@ export const PROVIDERS = [
     models: [
       'claude-3.7-sonnet', 
       'claude-3.7-opus', 
-      'claude-3.5-sonnet'
+      'claude-3.5-sonnet',
+      'claude-3.7-sonnet-reasoning'
     ]
   },
   {
@@ -26,7 +26,9 @@ export const PROVIDERS = [
     models: [
       'gemini-2.5-flash', 
       'gemini-2.5-pro', 
-      'gemini-1.5-flash'
+      'gemini-1.5-flash',
+      'gemini-2.5-flash-preview-04-17',
+      'gemini-2.5-pro-preview'
     ]
   },
   {
@@ -48,15 +50,15 @@ export const PROVIDERS = [
   {
     name: 'XAI',
     models: [
-      'Grok-3-beta',
-      'Grok-3-mini-beta'
+      'grok-3-beta',
+      'grok-3-mini-beta'
     ]
   },
   {
     name: 'DeepSeek',
     models: [
-      'DeepSeek-R1',
-      'DeepSeek-V3-0324'
+      'deepseek-r1',
+      'deepseek-v3-0324'
     ]
   },
   // Add Mock provider for simulation/testing

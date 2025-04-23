@@ -1,16 +1,15 @@
 
 import { ModelAdapter } from "./ModelAdapter";
 
-// Stub DeepSeek adapter
 export class DeepSeekAdapter implements ModelAdapter {
   modelName: string;
   providerName = "DeepSeek";
   supportedFeatures = ["text"];
   constructor(modelName: string) {
-    this.modelName = modelName;
+    // Normalize model name to lowercase
+    this.modelName = modelName.toLowerCase();
   }
   buildRequest(input: string, config: any) {
-    // Replace with real API integration if desired!
     return {
       model: this.modelName,
       messages: [

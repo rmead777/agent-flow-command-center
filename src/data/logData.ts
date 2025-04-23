@@ -1,8 +1,17 @@
-
 // Sample log data for the logs view
 import { FlowOutput } from "@/components/flow/FlowOutputPanel";
+import { toast } from "@/components/ui/use-toast";
 
-export const logs = [
+export interface LogEntry {
+  id: string;
+  timestamp: string;
+  agentName: string;
+  eventType: 'info' | 'warning' | 'error';
+  details: string;
+  flowId?: string; // Optional reference to related flow execution
+}
+
+export const logs: LogEntry[] = [
   {
     id: '1',
     timestamp: '2023-04-22 08:02:13',
@@ -150,29 +159,77 @@ export let flowOutputs: FlowOutput[] = [];
 
 // Add new flow outputs to the log history
 export function addFlowOutputsToHistory(outputs: FlowOutput[]) {
-  flowOutputs = [...outputs, ...flowOutputs].slice(0, 100); // Keep last 100 outputs
+  if (!outputs || !Array.isArray(outputs) || outputs.length === 0) {
+    console.warn("Attempted to add empty flow outputs to history");
+    return;
+  }
   
-  // Also add summary entries to the general logs
-  const timestamp = new Date().toISOString();
-  
-  logs.unshift({
-    id: `flow-run-${Date.now()}`,
-    timestamp: timestamp.replace('T', ' ').substring(0, 19),
-    agentName: 'Flow Engine',
-    eventType: 'info',
-    details: `Completed flow execution with ${outputs.length} node outputs`,
-  });
-  
-  // Add individual node outputs as log entries for errors
-  outputs.forEach(output => {
-    if (output.nodeType === 'error' || output.output.toString().toLowerCase().includes('error')) {
-      logs.unshift({
-        id: `node-${output.nodeId}-${Date.now()}`,
-        timestamp: output.timestamp.replace('T', ' ').substring(0, 19),
-        agentName: output.nodeName,
-        eventType: 'error',
-        details: `Error in node execution: ${typeof output.output === 'object' ? JSON.stringify(output.output) : output.output}`,
-      });
+  try {
+    // Generate a unique ID for this flow execution
+    const flowId = `flow-${Date.now()}`;
+    
+    // Add to flow outputs history (newest first)
+    flowOutputs = [...outputs, ...flowOutputs].slice(0, 100); // Keep last 100 outputs
+    
+    // Store in localStorage for persistence
+    try {
+      localStorage.setItem("flow_outputs_history", JSON.stringify(flowOutputs.slice(0, 50)));
+    } catch (e) {
+      console.warn("Failed to save flow outputs to localStorage:", e);
     }
-  });
+    
+    // Add summary entry to general logs
+    const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    const successfulNodes = outputs.filter(o => o.nodeType !== 'error').length;
+    const errorNodes = outputs.filter(o => o.nodeType === 'error').length;
+    
+    logs.unshift({
+      id: `flow-run-${Date.now()}`,
+      timestamp,
+      agentName: 'Flow Engine',
+      eventType: errorNodes > 0 ? 'warning' : 'info',
+      details: `Completed flow execution with ${outputs.length} nodes (${successfulNodes} successful, ${errorNodes} errors)`,
+      flowId
+    });
+    
+    // Add individual node outputs as log entries for errors
+    outputs.forEach(output => {
+      const isError = output.nodeType === 'error' || 
+                     (typeof output.output === 'string' && 
+                      output.output.toString().toLowerCase().includes('error'));
+      
+      if (isError) {
+        logs.unshift({
+          id: `node-${output.nodeId}-${Date.now()}`,
+          timestamp: output.timestamp.replace('T', ' ').substring(0, 19),
+          agentName: output.nodeName,
+          eventType: 'error',
+          details: `Error in node execution: ${typeof output.output === 'object' ? JSON.stringify(output.output) : output.output}`,
+          flowId
+        });
+      }
+    });
+  } catch (error) {
+    console.error("Error adding flow outputs to history:", error);
+    toast({
+      title: "Log Error",
+      description: "Failed to record flow execution logs",
+      variant: "destructive"
+    });
+  }
 }
+
+// Load flow outputs from localStorage on startup
+export function initializeFlowOutputs() {
+  try {
+    const savedOutputs = localStorage.getItem("flow_outputs_history");
+    if (savedOutputs) {
+      flowOutputs = JSON.parse(savedOutputs);
+    }
+  } catch (e) {
+    console.warn("Failed to load saved flow outputs:", e);
+  }
+}
+
+// Initialize on module load
+initializeFlowOutputs();

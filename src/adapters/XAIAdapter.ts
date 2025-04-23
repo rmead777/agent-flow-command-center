@@ -1,16 +1,15 @@
 
 import { ModelAdapter } from "./ModelAdapter";
 
-// Stub XAI adapter
 export class XAIAdapter implements ModelAdapter {
   modelName: string;
   providerName = "XAI";
   supportedFeatures = ["text"];
   constructor(modelName: string) {
-    this.modelName = modelName;
+    // Normalize model name to lowercase
+    this.modelName = modelName.toLowerCase();
   }
   buildRequest(input: string, config: any) {
-    // Replace with real API integration if desired!
     return {
       model: this.modelName,
       messages: [
