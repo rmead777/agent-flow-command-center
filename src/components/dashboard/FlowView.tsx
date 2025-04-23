@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import {
   ReactFlow,
@@ -11,6 +10,7 @@ import {
   Connection,
   NodeMouseHandler,
   Node,
+  Panel
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { AgentNode } from '@/components/flow/AgentNode';
@@ -22,7 +22,6 @@ import { runSimulatedFlow } from '@/flow/MockRunner';
 import { FlowNode } from '@/flow/types';
 import { Plus, Save, Play, Code, Settings } from 'lucide-react';
 
-// Define the AgentNodeData type
 interface AgentNodeData {
   label: string;
   type: string;
@@ -44,7 +43,6 @@ interface AgentNodeData {
   [key: string]: any;
 }
 
-// enable parent ref actions (for DashboardHeader or other)
 export interface FlowViewHandle {
   runFlow: () => void;
   saveFlow: () => void;
@@ -56,11 +54,9 @@ const nodeTypes = {
   agent: AgentNode,
 };
 
-// -- LocalStorage keys --
 const LOCALSTORAGE_NODES_KEY = "ai_flow_nodes";
 const LOCALSTORAGE_EDGES_KEY = "ai_flow_edges";
 
-// Utility: safely parse, with fallback
 function loadFromLocalStorage<T>(key: string, fallback: T): T {
   try {
     const data = localStorage.getItem(key);
@@ -74,7 +70,6 @@ function loadFromLocalStorage<T>(key: string, fallback: T): T {
 }
 
 export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
-  // Initial nodes: try to load from localStorage or fallback to file
   const typedInitialNodes: Node<AgentNodeData>[] = initialNodes.map(node => ({
     ...node,
     data: {
@@ -82,7 +77,6 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     } as AgentNodeData,
   }));
 
-  // Load nodes and edges from localStorage if present
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<AgentNodeData>>(
     loadFromLocalStorage<Node<AgentNodeData>[]>(LOCALSTORAGE_NODES_KEY, typedInitialNodes)
   );
@@ -93,7 +87,6 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
   const [isValidated, setIsValidated] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
 
-  // --- Flow actions for DashboardHeader via ref
   useImperativeHandle(ref, () => ({
     runFlow: () => handleExecuteFlow(),
     saveFlow: handleSaveFlow,
@@ -133,8 +126,6 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     setIsValidated(isValid);
   }, [nodes]);
 
-  // ---- SAVE/LOAD FLOW ----
-  // Save flow to localStorage
   function handleSaveFlow() {
     localStorage.setItem(LOCALSTORAGE_NODES_KEY, JSON.stringify(nodes));
     localStorage.setItem(LOCALSTORAGE_EDGES_KEY, JSON.stringify(edges));
@@ -144,7 +135,6 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     });
   }
 
-  // ---- ADD AGENT NODE ----
   const handleAddNode = () => {
     const newId = `node-${Date.now()}`;
     const last = nodes.length ? nodes[nodes.length - 1] : null;
@@ -178,7 +168,6 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     });
   };
 
-  // ---- EXECUTE / RUN FLOW ----
   const handleExecuteFlow = async () => {
     if (!isValidated) {
       const isValid = validateBeforeExecution(nodes);
@@ -301,7 +290,6 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     }
   };
 
-  // ---- DELETE NODE ----
   const handleDeleteNode = (nodeId: string) => {
     setNodes(ns => ns.filter(n => n.id !== nodeId));
     setEdges(es => es.filter(e => e.source !== nodeId && e.target !== nodeId));
@@ -312,7 +300,6 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     });
   };
 
-  // On mount, if no localStorage data, save initial to storage
   useEffect(() => {
     if (!localStorage.getItem(LOCALSTORAGE_NODES_KEY)) {
       localStorage.setItem(LOCALSTORAGE_NODES_KEY, JSON.stringify(nodes));
@@ -320,7 +307,7 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     if (!localStorage.getItem(LOCALSTORAGE_EDGES_KEY)) {
       localStorage.setItem(LOCALSTORAGE_EDGES_KEY, JSON.stringify(edges));
     }
-  }, []); // only once on mount
+  }, []);
 
   return (
     <div className="h-full w-full rounded-lg border border-gray-800 bg-gray-900">
