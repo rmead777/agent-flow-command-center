@@ -124,6 +124,10 @@ export const FlowView = forwardRef<FlowViewHandle, FlowViewProps>(({ masterUserP
     setNodes((ns) => ns.map(n => (n.id === nodeId ? updater(n) : n)));
   }, [setNodes]);
 
+  const handleDeleteEdge = useCallback((edgeId: string) => {
+    setEdges((edges) => edges.filter((edge) => edge.id !== edgeId));
+  }, [setEdges]);
+
   useEffect(() => {
     const isValid = validateBeforeExecution(nodes);
     setIsValidated(isValid);
@@ -487,6 +491,7 @@ export const FlowView = forwardRef<FlowViewHandle, FlowViewProps>(({ masterUserP
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           onNodeClick={onNodeClick}
+          onDeleteEdge={handleDeleteEdge}
         >
           <div className="absolute top-2 right-2 z-10 flex gap-2">
             <FlowToolbar
