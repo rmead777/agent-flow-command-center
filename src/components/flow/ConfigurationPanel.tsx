@@ -131,8 +131,13 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
   const selectedModel = data.modelId || "";
   const availableModels = selectedProvider ? modelsByProvider[selectedProvider] || [] : [];
   const selectedAgentType = data.type || tempAgentType || "";
-  const color = data.color || "";
+  const color = data.color || "#8E9196";
   const colorInputRef = useRef<HTMLInputElement>(null);
+
+  const [opacity, setOpacity] = useState<number>(() => extractAlpha(color));
+  useEffect(() => {
+    setOpacity(extractAlpha(color));
+  }, [color]);
 
   const systemPrompt = data.config?.systemPrompt || "";
   const temperature = data.config?.temperature ?? 0.7;
@@ -205,22 +210,43 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
     }));
   };
 
-  const updateColor = (color: string) => {
+  const updateColor = (colorVal: string) => {
+    let colorWithAlpha = opacity === 1 ? colorVal : applyAlphaToHex(colorVal, opacity);
     onNodeChange(prev => ({
       ...prev,
       data: {
         ...prev.data,
-        color
+        color: colorWithAlpha
+      }
+    }));
+  };
+
+  const handleCustomColor = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const baseHex = e.target.value;
+    let colorWithAlpha = opacity === 1 ? baseHex : applyAlphaToHex(baseHex, opacity);
+    updateColor(colorWithAlpha);
+  };
+
+  const handleAlphaChange = (value: number[]) => {
+    const nextAlpha = value[0];
+    setOpacity(nextAlpha);
+
+    let baseColor = color;
+    if (baseColor.startsWith('#') && baseColor.length === 9) {
+      baseColor = baseColor.slice(0, 7); // strip old alpha if present
+    }
+    const colorWithAlpha = nextAlpha === 1 ? baseColor : applyAlphaToHex(baseColor, nextAlpha);
+    onNodeChange(prev => ({
+      ...prev,
+      data: {
+        ...prev.data,
+        color: colorWithAlpha
       }
     }));
   };
 
   const handleTemperature = (value: number[]) => {
     updateConfig("temperature", value[0]);
-  };
-
-  const handleCustomColor = (e: React.ChangeEvent<HTMLInputElement>) => {
-    updateColor(e.target.value);
   };
 
   if (!node) return null;
@@ -266,6 +292,47 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
       setHasShownMockHint(true);
     }
   }, [selectedProvider, selectedModel, hasShownMockHint]);
+
+  function extractAlpha(color: string): number {
+    if (!color) return 1;
+    if (color.startsWith('#') && color.length === 9) {
+      const alphaHex = color.slice(7, 9);
+      return Math.round((parseInt(alphaHex, 16) / 255) * 100) / 100;
+    }
+    if (color.startsWith('rgba(')) {
+      const alpha = color.split(',')[3];
+      if (alpha) return parseFloat(alpha.replace(')', '').trim());
+    }
+    return 1;
+  }
+
+  function applyAlphaToHex(hex: string, alpha: number) {
+    if (!hex.startsWith('#')) return hex;
+    if (hex.length === 7) {
+      const alphaVal = Math.round(alpha * 255).toString(16).padStart(2, '0');
+      return `${hex}${alphaVal}`;
+    }
+    if (hex.length === 9) {
+      const alphaVal = Math.round(alpha * 255).toString(16).padStart(2, '0');
+      return `${hex.slice(0,7)}${alphaVal}`;
+    }
+    return hex;
+  }
+
+  function hexToRgba(hex: string, alpha: number) {
+    if (!hex || !hex.startsWith('#')) return hex;
+    let r = 0, g = 0, b = 0;
+    if(hex.length === 7) {
+      r = parseInt(hex.slice(1,3), 16);
+      g = parseInt(hex.slice(3,5), 16);
+      b = parseInt(hex.slice(5,7), 16);
+    } else if (hex.length === 9) {
+      r = parseInt(hex.slice(1,3), 16);
+      g = parseInt(hex.slice(3,5), 16);
+      b = parseInt(hex.slice(5,7), 16);
+    }
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
 
   return (
     <div className="h-full w-80 flex-shrink-0 overflow-auto border-l border-gray-800 bg-gray-900 p-4">
@@ -410,20 +477,20 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
 
         <div className="mb-4">
           <label className="block mb-2 text-sm font-medium">Node Color</label>
-          <div className="flex flex-wrap gap-2 mb-2">
+          <div className="flex flex-wrap gap-2 mb-2 items-center">
             {COLOR_OPTIONS.map((c) => (
               <button
                 key={c}
                 type="button"
                 title={c}
                 aria-label={`Pick color ${c}`}
-                onClick={() => updateColor(c)}
+                onClick={() => updateColor(opacity === 1 ? c : applyAlphaToHex(c, opacity))}
                 className={`w-7 h-7 rounded-full border-2 flex items-center justify-center cursor-pointer ${
-                  color === c ? "border-amber-400 ring-2 ring-amber-400" : "border-gray-700"
+                  color.startsWith(c) ? "border-amber-400 ring-2 ring-amber-400" : "border-gray-700"
                 }`}
-                style={{ background: c }}
+                style={{ background: opacity === 1 ? c : hexToRgba(c, opacity) }}
               >
-                {color === c && (
+                {color.startsWith(c) && (
                   <span className="w-3 h-3 rounded-full bg-white/80 block"></span>
                 )}
               </button>
@@ -431,7 +498,13 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
             <input
               ref={colorInputRef}
               type="color"
-              value={color && !COLOR_OPTIONS.includes(color) ? color : "#8E9196"}
+              value={
+                color.startsWith('#')
+                  ? color.length === 7
+                    ? color
+                    : color.slice(0,7)
+                  : "#8E9196"
+              }
               onChange={handleCustomColor}
               title="Pick custom color"
               className="w-7 h-7 rounded-full border-2 cursor-pointer border-gray-700 bg-transparent p-0"
@@ -442,8 +515,22 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
               aria-label="Pick custom color"
             />
           </div>
+          <div className="mb-2">
+            <label className="mb-1 block text-xs font-medium">Transparency</label>
+            <Slider
+              value={[opacity]}
+              min={0}
+              max={1}
+              step={0.05}
+              onValueChange={handleAlphaChange}
+              className="w-full py-2"
+            />
+            <div className="text-xs text-gray-400">
+              <span>Alpha: {(opacity * 100).toFixed(0)}%</span>
+            </div>
+          </div>
           <div className="text-xs text-gray-400">
-            Choose from preset colors or pick any color using the wheel.
+            Choose from preset colors or pick any color using the wheel. Use the transparency slider to adjust node opacity.
           </div>
         </div>
       </div>
