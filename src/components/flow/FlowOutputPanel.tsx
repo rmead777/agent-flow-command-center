@@ -105,18 +105,16 @@ export function FlowOutputPanel({ outputs, isVisible, onClose, title = "Flow Exe
         </div>
       </div>
       
-      <ScrollArea className="h-[300px] p-4">
+      <ScrollArea className="h-[300px]">
         {outputs.length === 0 ? (
           <div className="flex items-center justify-center h-full text-gray-500">
             No output data available. Run the flow to see results.
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3 p-4">
             {outputs.map((output, index) => {
               const nodeKey = `${output.nodeId}-${index}`;
               const isExpanded = expandedNodes[nodeKey] || false;
-              
-              // Get system prompt directly from the output object
               const systemPrompt = output.config?.systemPrompt || '';
 
               return (
@@ -124,10 +122,10 @@ export function FlowOutputPanel({ outputs, isVisible, onClose, title = "Flow Exe
                   key={nodeKey}
                   open={isExpanded} 
                   onOpenChange={() => toggleNodeExpansion(nodeKey)}
-                  className="border border-gray-800 rounded-md overflow-hidden"
+                  className="rounded-md overflow-hidden"
                 >
                   <CollapsibleTrigger asChild>
-                    <div className="flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-800 cursor-pointer">
+                    <div className="flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-800 cursor-pointer rounded-t-md">
                       <div className="flex items-center">
                         {isExpanded ? 
                           <ChevronDown className="h-4 w-4 mr-2 text-gray-400" /> : 
@@ -156,23 +154,25 @@ export function FlowOutputPanel({ outputs, isVisible, onClose, title = "Flow Exe
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <div className="p-3 bg-gray-900 space-y-3">
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-400 mb-1">Input:</h4>
-                        <div className="p-2 bg-gray-800 rounded-md text-xs overflow-x-auto whitespace-pre-wrap">
-                          {extractInputSummaries(output.input)}
+                    <div className="bg-white text-gray-900 p-4 rounded-b-md space-y-4">
+                      {output.input && (
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-600 mb-2">Input:</h4>
+                          <div className="p-3 bg-gray-50 rounded-md text-sm overflow-x-auto whitespace-pre-wrap font-mono">
+                            {extractInputSummaries(output.input)}
+                          </div>
                         </div>
-                      </div>
+                      )}
                       <div>
-                        <h4 className="text-sm font-medium text-gray-400 mb-1">Output:</h4>
-                        <div className="p-2 bg-gray-800 rounded-md text-xs overflow-x-auto whitespace-pre-wrap">
+                        <h4 className="text-sm font-medium text-gray-600 mb-2">Output:</h4>
+                        <div className="p-3 bg-gray-50 rounded-md text-sm overflow-x-auto whitespace-pre-wrap font-mono">
                           {extractCleanText(output.output)}
                         </div>
                       </div>
                       {systemPrompt && (
                         <div>
-                          <h4 className="text-sm font-medium text-gray-400 mb-1">System Prompt:</h4>
-                          <div className="p-2 bg-gray-800 rounded-md text-xs overflow-x-auto whitespace-pre-wrap text-blue-300">
+                          <h4 className="text-sm font-medium text-gray-600 mb-2">System Prompt:</h4>
+                          <div className="p-3 bg-gray-50 rounded-md text-sm overflow-x-auto whitespace-pre-wrap font-mono text-blue-600">
                             {systemPrompt}
                           </div>
                         </div>
