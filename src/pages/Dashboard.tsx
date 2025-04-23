@@ -9,11 +9,13 @@ import { LogsView } from "@/components/dashboard/LogsView";
 import { NotificationBar } from "@/components/dashboard/NotificationBar";
 import APIKeysPage from "@/pages/APIKeysPage";
 import ModelSystemValidator from "@/components/admin/ModelSystemValidator";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type View = "flow" | "metrics" | "logs" | "api-keys" | "system-validator";
 
 const Dashboard = () => {
   const [currentView, setCurrentView] = useState<View>("flow");
+  const isMobile = useIsMobile();
   const [notifications, setNotifications] = useState<
     Array<{
       id: string;
@@ -66,16 +68,18 @@ const Dashboard = () => {
             onSettings={handleSettings}
           />
           <main className="flex-1 overflow-auto p-4">
-            {currentView === "flow" && <FlowView ref={flowViewRef} />}
-            {currentView === "metrics" && <AgentMetricsView />}
-            {currentView === "logs" && <LogsView />}
-            {currentView === "api-keys" && <APIKeysPage />}
-            {currentView === "system-validator" && (
-              <div className="max-w-4xl mx-auto">
-                <h1 className="text-2xl font-bold mb-6">System Validation</h1>
-                <ModelSystemValidator />
-              </div>
-            )}
+            <div className={isMobile ? "h-[500px]" : "h-[calc(100vh-130px)]"}>
+              {currentView === "flow" && <FlowView ref={flowViewRef} />}
+              {currentView === "metrics" && <AgentMetricsView />}
+              {currentView === "logs" && <LogsView />}
+              {currentView === "api-keys" && <APIKeysPage />}
+              {currentView === "system-validator" && (
+                <div className="max-w-4xl mx-auto">
+                  <h1 className="text-2xl font-bold mb-6">System Validation</h1>
+                  <ModelSystemValidator />
+                </div>
+              )}
+            </div>
           </main>
         </div>
       </div>

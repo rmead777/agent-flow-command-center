@@ -12,6 +12,7 @@ import {
   Edge
 } from "@xyflow/react";
 import { AgentNode } from "@/components/flow/AgentNode";
+import "@xyflow/react/dist/style.css"; // Add missing CSS import
 
 interface AgentNodeData {
   label: string;

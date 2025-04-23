@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -119,5 +120,35 @@
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 240 4.9% 83.9%;
+  }
+}
+
+/* React Flow specific styles */
+.react-flow__node {
+  max-width: 250px;
+  max-height: 200px;
+  overflow: visible;
+}
+
+.react-flow__handle {
+  width: 8px;
+  height: 8px;
+  background-color: #555;
+  border: 2px solid #fff;
+}
+
+.react-flow__edge-path {
+  stroke: #555;
+  stroke-width: 2;
+}
+
+.react-flow__edge.animated path {
+  stroke-dasharray: 5;
+  animation: dashdraw 0.5s linear infinite;
+}
+
+@keyframes dashdraw {
+  from {
+    stroke-dashoffset: 10;
   }
 }

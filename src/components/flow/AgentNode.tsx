@@ -32,7 +32,7 @@ export function AgentNode({ data, selected }: AgentNodeProps) {
   const getNodeStyle = () => {
     if (data.type === 'input') return 'bg-indigo-900 text-indigo-100';
     if (data.type === 'action') return 'bg-purple-900 text-purple-100';
-    if (data.type === 'response') return 'bg-green-900 text-green-100';
+    if (data.type === 'output') return 'bg-green-900 text-green-100';
     return 'bg-gray-800 text-gray-100';
   };
   
@@ -47,9 +47,14 @@ export function AgentNode({ data, selected }: AgentNodeProps) {
       className={`rounded-md p-4 shadow-md transition-shadow ${getNodeStyle()} ${
         selected ? 'ring-2 ring-white/50' : ''
       }`}
-      style={{ minWidth: 180 }}
+      style={{ width: 180, height: 'auto' }}
     >
-      <Handle type="target" position={Position.Top} className="!bg-gray-300" />
+      <Handle 
+        type="target" 
+        position={Position.Top} 
+        className="!bg-gray-300" 
+        isConnectable={true}
+      />
       
       <div className="mb-2 flex items-center justify-between">
         <div className="text-sm font-medium">{data.label}</div>
@@ -77,7 +82,12 @@ export function AgentNode({ data, selected }: AgentNodeProps) {
         )}
       </div>
       
-      <Handle type="source" position={Position.Bottom} className="!bg-gray-300" />
+      <Handle 
+        type="source" 
+        position={Position.Bottom} 
+        className="!bg-gray-300" 
+        isConnectable={true}
+      />
     </div>
   );
 }
