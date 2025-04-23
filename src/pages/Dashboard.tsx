@@ -10,6 +10,8 @@ import { NotificationBar } from "@/components/dashboard/NotificationBar";
 import APIKeysPage from "@/pages/APIKeysPage";
 import ModelSystemValidator from "@/components/admin/ModelSystemValidator";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 type View = "flow" | "metrics" | "logs" | "api-keys" | "system-validator";
 
@@ -37,6 +39,9 @@ const Dashboard = () => {
       timestamp: new Date(),
     },
   ]);
+
+  // --- Master user prompt state ---
+  const [masterUserPrompt, setMasterUserPrompt] = useState<string>("");
 
   // --- FlowView ref for button handlers ---
   const flowViewRef = useRef<FlowViewHandle>(null);
@@ -67,9 +72,29 @@ const Dashboard = () => {
             onCode={handleCode}
             onSettings={handleSettings}
           />
+          {/* Show master user prompt field only on the flow view */}
+          {currentView === "flow" && (
+            <div className="bg-gray-950 border-b border-gray-800 p-3 flex gap-2 items-center">
+              <label htmlFor="masterUserPrompt" className="text-sm font-medium text-gray-300 mr-2 flex-shrink-0">User Prompt:</label>
+              <Input
+                id="masterUserPrompt"
+                type="text"
+                className="bg-gray-900 border-gray-700 text-gray-100 w-full"
+                value={masterUserPrompt}
+                onChange={e => setMasterUserPrompt(e.target.value)}
+                placeholder="Enter prompt for this run (optional)"
+                autoComplete="off"
+              />
+            </div>
+          )}
           <main className="flex-1 overflow-auto p-4">
             <div className={isMobile ? "h-[500px]" : "h-[calc(100vh-130px)]"}>
-              {currentView === "flow" && <FlowView ref={flowViewRef} />}
+              {currentView === "flow" && (
+                <FlowView
+                  ref={flowViewRef}
+                  masterUserPrompt={masterUserPrompt}
+                />
+              )}
               {currentView === "metrics" && <AgentMetricsView />}
               {currentView === "logs" && <LogsView />}
               {currentView === "api-keys" && <APIKeysPage />}

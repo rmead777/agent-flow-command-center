@@ -57,11 +57,15 @@ export interface FlowViewHandle {
   showCode: () => void;
 }
 
+interface FlowViewProps {
+  masterUserPrompt?: string;
+}
+
 const LOCALSTORAGE_NODES_KEY = "ai_flow_nodes";
 const LOCALSTORAGE_EDGES_KEY = "ai_flow_edges";
 const LOCALSTORAGE_OUTPUTS_KEY = "ai_flow_last_outputs";
 
-export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
+export const FlowView = forwardRef<FlowViewHandle, FlowViewProps>(({ masterUserPrompt }, ref) => {
   const typedInitialNodes: Node<FlowNodeData>[] = initialNodes.map(node => ({
     ...node,
     data: {
@@ -264,21 +268,8 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     });
 
     try {
-      const promptNodes = nodes.filter(n => n.type === "inputPrompt");
-      let userPrompt = "";
-      
-      if (promptNodes.length > 0) {
-        const firstPromptNode = promptNodes[0];
-        userPrompt = firstPromptNode.data && "prompt" in firstPromptNode.data
-          ? String(firstPromptNode.data.prompt || "") 
-          : "";
-        
-        console.log(`Found prompt node with value: "${userPrompt}"`);
-      }
-
       const flowNodes: FlowNode[] = nodes.map(node => {
         const nodeData = node.data as FlowNodeData;
-        
         if (node.type === "inputPrompt") {
           return {
             id: node.id,
@@ -304,15 +295,11 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
         }
       });
 
-      console.log("Prepared flow nodes:", flowNodes);
-
       const outputs: FlowOutput[] = [];
       const nodeOutputs: Record<string, any> = {};
 
       try {
         const levels = resolveDAG(flowNodes);
-        console.log("DAG levels:", levels);
-
         for (const level of levels) {
           const levelPromises = level.map(async (node) => {
             const startTime = performance.now();
@@ -323,15 +310,20 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
                 inputs = node.inputNodeIds
                   .map(id => nodeOutputs[id])
                   .filter(output => output !== undefined);
-                
                 console.log(`Node ${node.id} has inputs from: ${node.inputNodeIds}`, inputs);
               }
 
+              const isRoot = !node.inputNodeIds || node.inputNodeIds.length === 0;
+              if (isRoot && masterUserPrompt && typeof masterUserPrompt === "string" && masterUserPrompt.trim().length > 0) {
+                console.log(`Injecting master user prompt into node ${node.id}: "${masterUserPrompt}"`);
+                inputs = [masterUserPrompt];
+              }
+
               if (node.type === "inputPrompt") {
-                const promptValue = node.prompt || userPrompt;
+                const promptValue = typeof node.prompt === "string" ? node.prompt : "";
                 console.log(`Using prompt directly from node ${node.id}: "${promptValue}"`);
                 nodeOutputs[node.id] = promptValue;
-                
+
                 const executionTime = Math.round(performance.now() - startTime);
                 outputs.push({
                   nodeId: node.id,
@@ -342,21 +334,17 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
                   output: promptValue,
                   executionTime
                 });
-                
-                return { nodeId: node.id, success: true };
-              }
 
-              if (inputs.length === 0 && userPrompt && node.type !== "inputPrompt") {
-                console.log(`Node ${node.id} has no inputs, using user prompt: "${userPrompt}"`);
-                inputs = [userPrompt];
+                return { nodeId: node.id, success: true };
               }
 
               console.log(`Executing node ${node.id} with inputs:`, inputs);
               const result = await executeNode(node, inputs);
+
               nodeOutputs[node.id] = result;
-              
+
               const executionTime = Math.round(performance.now() - startTime);
-              
+
               outputs.push({
                 nodeId: node.id,
                 nodeName: node.config?.label || `Node ${node.id}`,
@@ -367,11 +355,11 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
                 output: result,
                 executionTime
               });
-              
+
               return { nodeId: node.id, success: true };
             } catch (error) {
               console.error(`Error executing node ${node.id}:`, error);
-              
+
               const executionTime = Math.round(performance.now() - startTime);
               outputs.push({
                 nodeId: node.id,
@@ -383,9 +371,9 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
                 output: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
                 executionTime
               });
-              
+
               nodeOutputs[node.id] = `Error: ${error instanceof Error ? error.message : "Unknown error"}`;
-              
+
               return { nodeId: node.id, success: false };
             }
           });
@@ -399,7 +387,7 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
           description: error instanceof Error ? error.message : "Unknown error in flow",
           variant: "destructive"
         });
-        
+
         outputs.push({
           nodeId: "error",
           nodeName: "Flow Engine",
@@ -415,7 +403,7 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
         currentNodes.map(node => {
           const nodeOutput = outputs.find(output => output.nodeId === node.id);
           const hasError = nodeOutput?.nodeType === "error";
-          
+
           return {
             ...node,
             data: {
