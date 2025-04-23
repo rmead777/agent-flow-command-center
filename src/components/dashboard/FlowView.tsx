@@ -335,8 +335,9 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     toast({ title: "Auto Layout", description: "This will be implemented soon!" });
 
   return (
-    <div className="h-full w-full rounded-lg border border-gray-800 bg-gray-900 flex flex-col">
-      <div className="flex-1 relative">
+    <div className="h-full w-full rounded-lg border border-gray-800 bg-gray-900 flex flex-col relative">
+      <div className="flex-1 relative min-h-0">
+        {/* Main FlowGraph */}
         <FlowGraph
           nodes={nodes}
           edges={edges}
@@ -365,6 +366,29 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
             />
           </div>
         </FlowGraph>
+
+        {/* Side Configuration Panel - as fixed/absolute sidebar */}
+        {selectedNode && selectedNodeData && (
+          <>
+            <aside
+              className="fixed top-0 right-0 z-40 h-full w-[350px] max-w-[95vw] border-l border-gray-800 bg-gray-900 shadow-lg transition-transform duration-200"
+              style={{ boxShadow: ' -8px 0 28px -8px rgba(0,0,0,0.36)' }}
+              tabIndex={-1}
+            >
+              <ConfigurationPanel
+                node={selectedNodeData as Node<AgentNodeData>}
+                onNodeChange={(updater) => updateNodeData(selectedNode, updater)}
+                onClose={() => setSelectedNode(null)}
+                onDeleteNode={handleDeleteNode}
+              />
+            </aside>
+            {/* Add a backdrop for mobile only */}
+            <div
+              className="fixed inset-0 z-30 bg-black/40 md:hidden"
+              onClick={() => setSelectedNode(null)}
+            />
+          </>
+        )}
       </div>
 
       <FlowOutputPanel
@@ -372,16 +396,8 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
         isVisible={showOutputPanel}
         onClose={() => setShowOutputPanel(false)}
       />
-
-      {selectedNode && selectedNodeData && (
-        <ConfigurationPanel
-          node={selectedNodeData as Node<AgentNodeData>}
-          onNodeChange={(updater) => updateNodeData(selectedNode, updater)}
-          onClose={() => setSelectedNode(null)}
-          onDeleteNode={handleDeleteNode}
-        />
-      )}
     </div>
   );
 });
 FlowView.displayName = "FlowView";
+
