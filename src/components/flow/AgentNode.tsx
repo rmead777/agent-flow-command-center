@@ -7,7 +7,7 @@ interface AgentNodeProps {
     label: string;
     type: string;
     status: 'active' | 'idle' | 'error';
-    metrics: {
+    metrics?: {
       tasksProcessed: number;
       latency: number;
       errorRate: number;
@@ -26,6 +26,9 @@ interface AgentNodeProps {
 }
 
 export function AgentNode({ data, selected }: AgentNodeProps) {
+  // Create default metrics if not provided
+  const metrics = data.metrics || { tasksProcessed: 0, latency: 0, errorRate: 0 };
+  
   const getNodeStyle = () => {
     if (data.type === 'input') return 'bg-indigo-900 text-indigo-100';
     if (data.type === 'action') return 'bg-purple-900 text-purple-100';
@@ -56,15 +59,15 @@ export function AgentNode({ data, selected }: AgentNodeProps) {
       <div className="flex flex-col gap-1 text-xs opacity-80">
         <div className="flex justify-between">
           <span>Tasks:</span>
-          <span>{data.metrics.tasksProcessed}</span>
+          <span>{metrics.tasksProcessed}</span>
         </div>
         <div className="flex justify-between">
           <span>Latency:</span>
-          <span>{data.metrics.latency}ms</span>
+          <span>{metrics.latency}ms</span>
         </div>
         <div className="flex justify-between">
           <span>Error Rate:</span>
-          <span>{data.metrics.errorRate}%</span>
+          <span>{metrics.errorRate}%</span>
         </div>
         {data.modelId && (
           <div className="flex justify-between">

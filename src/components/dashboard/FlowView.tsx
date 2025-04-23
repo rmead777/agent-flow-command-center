@@ -153,6 +153,11 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
           label: 'New Agent',
           type: 'model',
           status: 'idle',
+          metrics: {
+            tasksProcessed: 0,
+            latency: 0,
+            errorRate: 0
+          },
           config: {
             systemPrompt: '',
             temperature: 0.7,
