@@ -23,6 +23,7 @@ export function ModelSettingsPanel({ node, onNodeChange }: BasePanelProps) {
   
   const systemPrompt = node.data?.config?.systemPrompt || "";
   const temperature = node.data?.config?.temperature ?? 0.7;
+  const maxTokens = node.data?.config?.maxTokens ?? 8000;
   const streamResponse = node.data?.config?.streamResponse ?? true;
   const retryOnError = node.data?.config?.retryOnError ?? true;
 
@@ -137,6 +138,20 @@ export function ModelSettingsPanel({ node, onNodeChange }: BasePanelProps) {
           onValueChange={(value) => updateConfig("temperature", value[0])} 
           max={1} 
           step={0.1} 
+          className="py-4" 
+        />
+      </div>
+
+      <div>
+        <div className="mb-2 flex items-center justify-between">
+          <label className="text-sm font-medium">Max Tokens</label>
+          <span className="text-xs text-gray-400">{maxTokens}</span>
+        </div>
+        <Slider 
+          value={[maxTokens]} 
+          onValueChange={(value) => updateConfig("maxTokens", value[0])} 
+          max={32000} 
+          step={1000} 
           className="py-4" 
         />
       </div>
