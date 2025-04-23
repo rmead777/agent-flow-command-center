@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
@@ -36,15 +35,37 @@ const Dashboard = () => {
     },
   ]);
 
+  // --- FlowView ref for button handlers ---
+  const flowViewRef = useRef<FlowViewHandle>(null);
+
+  // --- Callbacks for DashboardHeader buttons ---
+  const handleRunFlow = () => {
+    flowViewRef.current?.runFlow();
+  };
+  const handleSaveFlow = () => {
+    flowViewRef.current?.saveFlow();
+  };
+  const handleCode = () => {
+    flowViewRef.current?.showCode();
+  };
+  const handleSettings = () => {
+    flowViewRef.current?.showSettings();
+  };
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background text-foreground">
         <DashboardSidebar currentView={currentView} setCurrentView={setCurrentView as any} />
         <div className="flex flex-1 flex-col">
           <NotificationBar notifications={notifications} />
-          <DashboardHeader />
+          <DashboardHeader
+            onRunFlow={handleRunFlow}
+            onSaveFlow={handleSaveFlow}
+            onCode={handleCode}
+            onSettings={handleSettings}
+          />
           <main className="flex-1 overflow-auto p-4">
-            {currentView === "flow" && <FlowView />}
+            {currentView === "flow" && <FlowView ref={flowViewRef} />}
             {currentView === "metrics" && <AgentMetricsView />}
             {currentView === "logs" && <LogsView />}
             {currentView === "api-keys" && <APIKeysPage />}

@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -13,6 +13,7 @@ import {
   Node as ReactFlowNode,
   Panel,
   NodeMouseHandler,
+  Node,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { AgentNode } from '@/components/flow/AgentNode';
@@ -22,9 +23,9 @@ import { validateBeforeExecution } from '@/utils/modelValidation';
 import { toast } from '@/components/ui/use-toast';
 import { runSimulatedFlow } from '@/flow/MockRunner';
 import { FlowNode } from '@/flow/types';
+import { Plus, Save, Play, Code, Settings } from 'lucide-react';
 
-// Define the AgentNodeData type to match the one in ConfigurationPanel
-// Add index signature to satisfy Record<string, unknown> constraint
+// Define the AgentNodeData type
 interface AgentNodeData {
   label: string;
   type: string;
@@ -43,32 +44,60 @@ interface AgentNodeData {
     retryOnError?: boolean;
     [key: string]: any;
   };
-  [key: string]: any; // Add index signature to satisfy constraint
+  [key: string]: any;
+}
+
+// enable parent ref actions (for DashboardHeader or other)
+export interface FlowViewHandle {
+  runFlow: () => void;
+  saveFlow: () => void;
+  showSettings: () => void;
+  showCode: () => void;
 }
 
 const nodeTypes = {
   agent: AgentNode,
 };
 
-export function FlowView() {
-  // Cast initialNodes to the correct type with proper typing
-  const typedInitialNodes = initialNodes.map(node => ({
+export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
+  // convert initial to correct format
+  const typedInitialNodes: Node<AgentNodeData>[] = initialNodes.map(node => ({
     ...node,
-    data: node.data as AgentNodeData
+    data: {
+      ...node.data,
+    } as AgentNodeData,
   }));
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(typedInitialNodes);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node<AgentNodeData>>(typedInitialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [isValidated, setIsValidated] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
+
+  // --- Flow actions for DashboardHeader via ref
+  useImperativeHandle(ref, () => ({
+    runFlow: () => handleExecuteFlow(),
+    saveFlow: handleSaveFlow,
+    showSettings: () => {
+      toast({
+        title: 'Settings Info',
+        description: 'Settings are not yet implemented. (Soon!)',
+      });
+    },
+    showCode: () => {
+      toast({
+        title: 'Code View',
+        description: 'Viewing code is not yet implemented. (Soon!)',
+      });
+    }
+  }));
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
 
-  const onNodeClick: NodeMouseHandler = useCallback((_: React.MouseEvent, node: ReactFlowNode) => {
+  const onNodeClick: NodeMouseHandler<Node<AgentNodeData>> = useCallback((_, node) => {
     setSelectedNode(node.id);
   }, []);
 
@@ -76,8 +105,8 @@ export function FlowView() {
     ? nodes.find(n => n.id === selectedNode) 
     : null;
 
-  const updateNodeData = useCallback((nodeId: string, updater: (n: ReactFlowNode<AgentNodeData>) => ReactFlowNode<AgentNodeData>) => {
-    setNodes((ns) => ns.map(n => (n.id === nodeId ? updater(n as unknown as ReactFlowNode<AgentNodeData>) : n)));
+  const updateNodeData = useCallback((nodeId: string, updater: (n: Node<AgentNodeData>) => Node<AgentNodeData>) => {
+    setNodes((ns) => ns.map(n => (n.id === nodeId ? updater(n) : n)));
   }, [setNodes]);
 
   useEffect(() => {
@@ -85,6 +114,52 @@ export function FlowView() {
     setIsValidated(isValid);
   }, [nodes]);
 
+  // ---- BUTTON: ADD AGENT NODE ----
+  const handleAddNode = () => {
+    // Find a good id
+    const newId = `node-${Date.now()}`;
+    // Smart default: just offset from last node or at (100,100)
+    const last = nodes.length ? nodes[nodes.length - 1] : null;
+    const pos =
+      last && last.position
+        ? { x: last.position.x + 80, y: last.position.y + 60 }
+        : { x: 100, y: 100 + nodes.length * 40 };
+
+    setNodes((nds) => [
+      ...nds,
+      {
+        id: newId,
+        type: 'agent',
+        position: pos,
+        data: {
+          label: 'New Agent',
+          type: 'model',
+          status: 'idle',
+          config: {
+            systemPrompt: '',
+            temperature: 0.7,
+            streamResponse: true,
+            retryOnError: true,
+          }
+        }
+      }
+    ]);
+    toast({
+      title: "Agent Node Added",
+      description: `New agent node '${newId}' created.`,
+    });
+  };
+
+  // ---- BUTTON: SAVE FLOW ----
+  function handleSaveFlow() {
+    toast({
+      title: 'Flow Saved',
+      description: 'Your AI workflow was saved successfully.',
+    });
+    // (future: push to backend/db!)
+  }
+
+  // ---- BUTTON: EXECUTE / RUN FLOW ----
   const handleExecuteFlow = async () => {
     if (!isValidated) {
       const isValid = validateBeforeExecution(nodes);
@@ -98,11 +173,8 @@ export function FlowView() {
         return;
       }
     }
-
-    // Execute the flow
     setIsExecuting(true);
-    
-    // Update all nodes to show processing status
+
     setNodes(currentNodes => 
       currentNodes.map(node => ({
         ...node,
@@ -119,13 +191,11 @@ export function FlowView() {
     });
 
     try {
-      // Check if we have mock models to run
-      const hasMockModel = nodes.some(node => 
-        (node.data as AgentNodeData).modelId === 'mock-model'
+      const hasMockModel = nodes.some(node =>
+        (node.data as AgentNodeData)?.modelId === 'mock-model'
       );
 
       if (hasMockModel) {
-        // Convert ReactFlow nodes to FlowNode format for the simulator
         const flowNodes: FlowNode[] = nodes.map(node => {
           const nodeData = node.data as AgentNodeData;
           return {
@@ -133,30 +203,25 @@ export function FlowView() {
             type: nodeData.type as "input" | "model" | "action" | "output",
             modelId: nodeData.modelId || undefined,
             config: nodeData.config,
-            // Find input nodes by looking at edges
             inputNodeIds: edges
               .filter(edge => edge.target === node.id)
               .map(edge => edge.source)
           };
         });
 
-        // Run the simulated flow for mock models
-        const mockInput = { 'node-1': 'Test input data' }; // Simulated input
+        const mockInput = { 'node-1': 'Test input data' };
         await runSimulatedFlow(flowNodes, mockInput)
           .then(results => {
             console.log("Flow execution results:", results);
-            
-            // Update node status based on results
             setNodes(currentNodes => 
               currentNodes.map(node => ({
                 ...node,
                 data: {
                   ...(node.data as AgentNodeData),
-                  status: 'idle' // Success status
+                  status: 'idle'
                 }
               }))
             );
-            
             toast({
               title: "Flow Execution Completed",
               description: "Mock simulation has finished successfully",
@@ -164,8 +229,6 @@ export function FlowView() {
           })
           .catch(error => {
             console.error("Flow execution error:", error);
-            
-            // Mark nodes as error state
             setNodes(currentNodes => 
               currentNodes.map(node => ({
                 ...node,
@@ -175,7 +238,6 @@ export function FlowView() {
                 }
               }))
             );
-            
             toast({
               title: "Flow Execution Error",
               description: error.message || "An error occurred during flow execution",
@@ -183,15 +245,12 @@ export function FlowView() {
             });
           });
       } else {
-        // For non-mock models, show appropriate message
         toast({
           title: "Flow Validated",
           description: "Flow validated successfully. Connection to real models requires additional setup.",
         });
-        
-        // Reset nodes to idle after a delay
         setTimeout(() => {
-          setNodes(currentNodes => 
+          setNodes(currentNodes =>
             currentNodes.map(node => ({
               ...node,
               data: {
@@ -209,9 +268,7 @@ export function FlowView() {
         description: error instanceof Error ? error.message : "Unknown error occurred",
         variant: "destructive"
       });
-      
-      // Mark nodes as error state
-      setNodes(currentNodes => 
+      setNodes(currentNodes =>
         currentNodes.map(node => ({
           ...node,
           data: {
@@ -225,12 +282,15 @@ export function FlowView() {
     }
   };
 
-  // Node DELETION
+  // ---- BUTTON: DELETE NODE (also exposed to config panel) ----
   const handleDeleteNode = (nodeId: string) => {
-    // Remove the node and any connected edges
     setNodes(ns => ns.filter(n => n.id !== nodeId));
     setEdges(es => es.filter(e => e.source !== nodeId && e.target !== nodeId));
     setSelectedNode(null);
+    toast({
+      title: "Node Deleted",
+      description: `Agent node '${nodeId}' deleted.`,
+    });
   };
 
   return (
@@ -270,18 +330,30 @@ export function FlowView() {
             <Background color="#333" gap={16} />
             <Panel position="top-right" className="bg-gray-900/80 backdrop-blur-sm p-2 rounded-md border border-gray-800">
               <div className="flex gap-2">
-                <button className="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 text-xs rounded">
+                <button
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 text-xs rounded flex items-center gap-1"
+                  onClick={handleAddNode}
+                  title="Add Node"
+                >
+                  <Plus size={16} className="inline" />
                   Add Node
                 </button>
-                <button className="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 text-xs rounded">
+                <button
+                  className="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 text-xs rounded flex items-center gap-1"
+                  onClick={() => toast({ title: "Auto Layout", description: "This will be implemented soon!" })}
+                  title="Auto Layout"
+                >
+                  {/* Could use an icon here as well if needed */}
                   Auto Layout
                 </button>
                 <button 
                   className={`${isValidated ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600'} 
-                    text-white px-2 py-1 text-xs rounded ${isExecuting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    text-white px-2 py-1 text-xs rounded flex items-center gap-1 ${isExecuting ? 'opacity-50 cursor-not-allowed' : ''}`}
                   onClick={handleExecuteFlow}
                   disabled={isExecuting}
+                  title="Run Flow"
                 >
+                  <Play size={16} className="inline" />
                   {isExecuting ? 'Executing...' : 'Execute Flow'}
                 </button>
               </div>
@@ -299,4 +371,5 @@ export function FlowView() {
       </div>
     </div>
   );
-}
+});
+FlowView.displayName = "FlowView";

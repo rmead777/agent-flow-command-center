@@ -1,8 +1,22 @@
 
 import { Save, Play, Download, Settings, Code } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useRef } from "react";
+import { FlowViewHandle } from "./FlowView";
 
-export function DashboardHeader() {
+interface DashboardHeaderProps {
+  onRunFlow: () => void;
+  onSaveFlow: () => void;
+  onCode: () => void;
+  onSettings: () => void;
+}
+
+export function DashboardHeader({
+  onRunFlow,
+  onSaveFlow,
+  onCode,
+  onSettings
+}: DashboardHeaderProps) {
   return (
     <header className="border-b border-gray-800 bg-gray-900 p-4">
       <div className="flex items-center justify-between">
@@ -18,6 +32,7 @@ export function DashboardHeader() {
             variant="outline"
             size="sm"
             className="gap-2 border-gray-700 bg-transparent text-gray-300 hover:bg-gray-800 hover:text-white"
+            onClick={onSettings}
           >
             <Settings className="h-4 w-4" />
             <span className="hidden sm:inline">Settings</span>
@@ -26,6 +41,7 @@ export function DashboardHeader() {
             variant="outline"
             size="sm"
             className="gap-2 border-gray-700 bg-transparent text-gray-300 hover:bg-gray-800 hover:text-white"
+            onClick={onCode}
           >
             <Code className="h-4 w-4" />
             <span className="hidden sm:inline">Code</span>
@@ -34,6 +50,7 @@ export function DashboardHeader() {
             variant="outline"
             size="sm"
             className="gap-2 border-gray-700 bg-transparent text-gray-300 hover:bg-gray-800 hover:text-white"
+            onClick={onSaveFlow}
           >
             <Save className="h-4 w-4" />
             <span className="hidden sm:inline">Save</span>
@@ -42,6 +59,7 @@ export function DashboardHeader() {
             variant="outline"
             size="sm"
             className="gap-2 border-gray-700 bg-transparent text-gray-300 hover:bg-gray-800 hover:text-white"
+            // Export logic if needed
           >
             <Download className="h-4 w-4" />
             <span className="hidden sm:inline">Export</span>
@@ -49,6 +67,7 @@ export function DashboardHeader() {
           <Button
             size="sm"
             className="gap-2 bg-purple-600 text-white hover:bg-purple-700"
+            onClick={onRunFlow}
           >
             <Play className="h-4 w-4" />
             <span>Run Flow</span>
