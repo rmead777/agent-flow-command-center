@@ -10,8 +10,8 @@ import {
   addEdge,
   Connection,
   Edge,
-  Panel,
   Node as ReactFlowNode,
+  Panel,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { AgentNode } from '@/components/flow/AgentNode';
@@ -19,6 +19,7 @@ import { ConfigurationPanel } from '@/components/flow/ConfigurationPanel';
 import { initialNodes, initialEdges } from '@/data/flowData';
 import { validateBeforeExecution } from '@/utils/modelValidation';
 import { toast } from '@/components/ui/use-toast';
+import { runSimulatedFlow } from '@/flow/MockRunner';
 
 // Import the AgentNodeData interface
 import { FlowNode as FlowNodeType } from '@/flow/types';
@@ -49,23 +50,24 @@ const nodeTypes = {
 };
 
 export function FlowView() {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [nodes, setNodes, onNodesChange] = useNodesState<AgentNodeData>(initialNodes as ReactFlowNode<AgentNodeData>[]);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [isValidated, setIsValidated] = useState(false);
+  const [isExecuting, setIsExecuting] = useState(false);
 
   const onConnect = useCallback(
-    (params) => setEdges((eds) => addEdge(params, eds)),
+    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
 
-  const onNodeClick = (_: React.MouseEvent, node) => {
+  const onNodeClick = (_: React.MouseEvent, node: ReactFlowNode<AgentNodeData>) => {
     setSelectedNode(node.id);
   };
 
   const selectedNodeData = selectedNode ? nodes.find(n => n.id === selectedNode) : null;
 
-  const updateNodeData = (nodeId, updater) => {
+  const updateNodeData = (nodeId: string, updater: (n: ReactFlowNode<AgentNodeData>) => ReactFlowNode<AgentNodeData>) => {
     setNodes((ns) => ns.map(n => (n.id === nodeId ? updater(n) : n)));
   };
 
@@ -74,7 +76,7 @@ export function FlowView() {
     setIsValidated(isValid);
   }, [nodes]);
 
-  const handleExecuteFlow = () => {
+  const handleExecuteFlow = async () => {
     if (!isValidated) {
       const isValid = validateBeforeExecution(nodes);
       setIsValidated(isValid);
@@ -87,10 +89,99 @@ export function FlowView() {
         return;
       }
     }
+
+    // Execute the flow
+    setIsExecuting(true);
+    
+    // Update all nodes to show processing status
+    setNodes(currentNodes => 
+      currentNodes.map(node => ({
+        ...node,
+        data: {
+          ...node.data,
+          status: 'active'
+        }
+      }))
+    );
+
     toast({
-      title: "Flow Execution",
-      description: "Flow validated successfully and ready for execution",
+      title: "Flow Execution Started",
+      description: "Running the flow simulation...",
     });
+
+    try {
+      // Check if we have mock models to run
+      const hasMockModel = nodes.some(node => 
+        node.data.modelId === 'mock-model'
+      );
+
+      if (hasMockModel) {
+        // Run the simulated flow for mock models
+        await runSimulatedFlow(nodes, (nodeId, status, message) => {
+          // Update node status based on the callback
+          updateNodeData(nodeId, (node) => ({
+            ...node,
+            data: {
+              ...node.data,
+              status: status as 'active' | 'idle' | 'error'
+            }
+          }));
+          
+          // Show toast message if provided
+          if (message) {
+            toast({
+              title: `Node ${nodeId} ${status === 'error' ? 'Error' : 'Update'}`,
+              description: message,
+              variant: status === 'error' ? 'destructive' : 'default'
+            });
+          }
+        });
+        
+        toast({
+          title: "Flow Execution Completed",
+          description: "Mock simulation has finished",
+        });
+      } else {
+        // For non-mock models, show appropriate message
+        toast({
+          title: "Flow Validated",
+          description: "Flow validated successfully. Connection to real models requires additional setup.",
+        });
+        
+        // Reset nodes to idle after a delay
+        setTimeout(() => {
+          setNodes(currentNodes => 
+            currentNodes.map(node => ({
+              ...node,
+              data: {
+                ...node.data,
+                status: 'idle'
+              }
+            }))
+          );
+        }, 2000);
+      }
+    } catch (error) {
+      console.error("Flow execution error:", error);
+      toast({
+        title: "Flow Execution Error",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive"
+      });
+      
+      // Mark nodes as error state
+      setNodes(currentNodes => 
+        currentNodes.map(node => ({
+          ...node,
+          data: {
+            ...node.data,
+            status: 'error'
+          }
+        }))
+      );
+    } finally {
+      setIsExecuting(false);
+    }
   };
 
   // Node DELETION
@@ -144,10 +235,12 @@ export function FlowView() {
                   Auto Layout
                 </button>
                 <button 
-                  className={`${isValidated ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600'} text-white px-2 py-1 text-xs rounded`}
+                  className={`${isValidated ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600'} 
+                    text-white px-2 py-1 text-xs rounded ${isExecuting ? 'opacity-50 cursor-not-allowed' : ''}`}
                   onClick={handleExecuteFlow}
+                  disabled={isExecuting}
                 >
-                  Execute Flow
+                  {isExecuting ? 'Executing...' : 'Execute Flow'}
                 </button>
               </div>
             </Panel>
@@ -155,7 +248,7 @@ export function FlowView() {
         </div>
         {selectedNode && selectedNodeData && (
           <ConfigurationPanel 
-            node={selectedNodeData}
+            node={selectedNodeData as ReactFlowNode<AgentNodeData>}
             onNodeChange={(updater) => updateNodeData(selectedNode, updater)}
             onClose={() => setSelectedNode(null)}
             onDeleteNode={handleDeleteNode}
@@ -165,3 +258,4 @@ export function FlowView() {
     </div>
   );
 }
+
