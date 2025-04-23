@@ -19,7 +19,6 @@ import { useState, useEffect } from 'react';
 import { Node as ReactFlowNode } from '@xyflow/react';
 import { toast } from '@/components/ui/use-toast';
 
-// Define a proper type for the node data
 interface AgentNodeData extends Record<string, unknown> {
   label: string;
   type: string;
@@ -44,11 +43,9 @@ interface ConfigurationPanelProps {
   node: ReactFlowNode<AgentNodeData>;
   onNodeChange: (updater: (prev: ReactFlowNode<AgentNodeData>) => ReactFlowNode<AgentNodeData>) => void;
   onClose: () => void;
-  // Optional, injected by FlowView
   onDeleteNode?: (nodeId: string) => void;
 }
 
-// LocalStorage keys for provider, model, and type selections
 const STORAGE_KEY_PREFIX = 'flow_config_';
 const getNodeStorageKey = (nodeId: string, field: string) => `${STORAGE_KEY_PREFIX}${nodeId}_${field}`;
 
@@ -57,23 +54,16 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
   const [tempProvider, setTempProvider] = useState<string>("");
   const [tempAgentType, setTempAgentType] = useState<string>("");
 
-  // Track toasts for mock explanation so we don't spam
   const [hasShownMockHint, setHasShownMockHint] = useState(false);
-
-  // Helper: Get full models by provider mapping
   const modelsByProvider = getModelsByProvider();
 
-  // --- PERSIST/RESTORE LOGIC FOR PROVIDER/MODEL/TYPE SELECTIONS ---
   useEffect(() => {
-    // Restore provider/model/type from storage each time node changes (prevents reverting to defaults)
     const savedProvider = localStorage.getItem(getNodeStorageKey(node.id, 'provider'));
     const savedModel = localStorage.getItem(getNodeStorageKey(node.id, 'model'));
     const savedType = localStorage.getItem(getNodeStorageKey(node.id, 'type'));
 
-    // Provider/model logic
     if (savedProvider && modelsByProvider[savedProvider]) {
       setTempProvider(savedProvider);
-      // Always update node data when restoring, if different
       if (savedModel && modelsByProvider[savedProvider]?.includes(savedModel)) {
         onNodeChange(prev => ({
           ...prev,
@@ -84,17 +74,13 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
         }));
       }
     } else if (data.modelId && getAdapter(data.modelId)) {
-      // Fallback: use model/provider from node data if valid
       setTempProvider(getAdapter(data.modelId)!.providerName);
-      // Don't change modelId (already set)
     } else {
       setTempProvider("");
     }
 
-    // Type logic
     if (savedType) {
       setTempAgentType(savedType);
-      // Always update node data when restoring, if different
       if (savedType !== data.type) {
         onNodeChange(prev => ({
           ...prev,
@@ -109,8 +95,7 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
     } else {
       setTempAgentType("");
     }
-    setHasShownMockHint(false); // Reset hint display when node changes
-    // eslint-disable-next-line
+    setHasShownMockHint(false);
   }, [node.id]);
 
   const selectedProvider = tempProvider;
@@ -123,10 +108,9 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
   const streamResponse = data.config?.streamResponse ?? true;
   const retryOnError = data.config?.retryOnError ?? true;
   const agentName = data.label || "";
-  // Use selectedAgentType for display and control
   const agentType = selectedAgentType;
 
-  // Immediate node-updating handlers for all fields
+  // Handlers (EDITED for live updates)
   const updateConfig = (key: string, value: any) => {
     onNodeChange(prev => ({
       ...prev,
@@ -140,6 +124,7 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
     }));
   };
 
+  // This handler updates name live, so it will be used and saved
   const updateLabel = (value: string) => {
     onNodeChange(prev => ({
       ...prev,
@@ -150,7 +135,6 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
     }));
   };
 
-  // --- Persist agent type to localStorage ---
   const updateAgentType = (value: string) => {
     localStorage.setItem(getNodeStorageKey(node.id, 'type'), value);
     setTempAgentType(value);
@@ -163,12 +147,10 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
     }));
   };
 
-  // --- Existing updateProvider now persists to localStorage ---
   const updateProvider = (provider: string) => {
     localStorage.setItem(getNodeStorageKey(node.id, 'provider'), provider);
     setTempProvider(provider);
 
-    // Clear modelId and persist blank model selection
     localStorage.removeItem(getNodeStorageKey(node.id, 'model'));
     onNodeChange(prev => ({
       ...prev,
@@ -176,7 +158,7 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
         ...prev.data,
         modelId: "",
         config: {
-          ...(prev.data?.config || {}), // can keep config
+          ...(prev.data?.config || {}),
         }
       }
     }));
@@ -194,17 +176,13 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
     }));
   };
 
-  // Simple helper for numeric slider
   const handleTemperature = (value: number[]) => {
     updateConfig("temperature", value[0]);
   };
 
   if (!node) return null;
-
-  // --- Clarify status: If status === 'active', show pause button ("running") ---
   const isRunning = data.status === 'active';
 
-  // Play/Pause functionality
   const handlePlayPause = () => {
     onNodeChange(prev => ({
       ...prev,
@@ -215,9 +193,7 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
     }));
   };
 
-  // Delete functionality
   const handleDeleteNode = () => {
-    // If parent provided delete fn, use it
     if (onDeleteNode) {
       onDeleteNode(node.id);
       toast({
@@ -234,7 +210,6 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
     }
   };
 
-  // Show a quick toast when Mock selected (provider/model)
   useEffect(() => {
     if (
       selectedProvider === "Mock" &&

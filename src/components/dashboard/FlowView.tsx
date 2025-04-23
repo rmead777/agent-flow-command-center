@@ -9,9 +9,6 @@ import {
   useEdgesState,
   addEdge,
   Connection,
-  Edge,
-  Node as ReactFlowNode,
-  Panel,
   NodeMouseHandler,
   Node,
 } from '@xyflow/react';
@@ -59,8 +56,25 @@ const nodeTypes = {
   agent: AgentNode,
 };
 
+// -- LocalStorage keys --
+const LOCALSTORAGE_NODES_KEY = "ai_flow_nodes";
+const LOCALSTORAGE_EDGES_KEY = "ai_flow_edges";
+
+// Utility: safely parse, with fallback
+function loadFromLocalStorage<T>(key: string, fallback: T): T {
+  try {
+    const data = localStorage.getItem(key);
+    if (!data) return fallback;
+    const parsed = JSON.parse(data);
+    if (Array.isArray(parsed)) return parsed as T;
+    return fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
-  // convert initial to correct format
+  // Initial nodes: try to load from localStorage or fallback to file
   const typedInitialNodes: Node<AgentNodeData>[] = initialNodes.map(node => ({
     ...node,
     data: {
@@ -68,8 +82,13 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     } as AgentNodeData,
   }));
 
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node<AgentNodeData>>(typedInitialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  // Load nodes and edges from localStorage if present
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node<AgentNodeData>>(
+    loadFromLocalStorage<Node<AgentNodeData>[]>(LOCALSTORAGE_NODES_KEY, typedInitialNodes)
+  );
+  const [edges, setEdges, onEdgesChange] = useEdgesState(
+    loadFromLocalStorage(LOCALSTORAGE_EDGES_KEY, initialEdges)
+  );
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [isValidated, setIsValidated] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
@@ -101,8 +120,8 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     setSelectedNode(node.id);
   }, []);
 
-  const selectedNodeData = selectedNode 
-    ? nodes.find(n => n.id === selectedNode) 
+  const selectedNodeData = selectedNode
+    ? nodes.find(n => n.id === selectedNode)
     : null;
 
   const updateNodeData = useCallback((nodeId: string, updater: (n: Node<AgentNodeData>) => Node<AgentNodeData>) => {
@@ -114,11 +133,20 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     setIsValidated(isValid);
   }, [nodes]);
 
-  // ---- BUTTON: ADD AGENT NODE ----
+  // ---- SAVE/LOAD FLOW ----
+  // Save flow to localStorage
+  function handleSaveFlow() {
+    localStorage.setItem(LOCALSTORAGE_NODES_KEY, JSON.stringify(nodes));
+    localStorage.setItem(LOCALSTORAGE_EDGES_KEY, JSON.stringify(edges));
+    toast({
+      title: 'Flow Saved',
+      description: 'Your AI workflow was saved to your browser.',
+    });
+  }
+
+  // ---- ADD AGENT NODE ----
   const handleAddNode = () => {
-    // Find a good id
     const newId = `node-${Date.now()}`;
-    // Smart default: just offset from last node or at (100,100)
     const last = nodes.length ? nodes[nodes.length - 1] : null;
     const pos =
       last && last.position
@@ -150,16 +178,7 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     });
   };
 
-  // ---- BUTTON: SAVE FLOW ----
-  function handleSaveFlow() {
-    toast({
-      title: 'Flow Saved',
-      description: 'Your AI workflow was saved successfully.',
-    });
-    // (future: push to backend/db!)
-  }
-
-  // ---- BUTTON: EXECUTE / RUN FLOW ----
+  // ---- EXECUTE / RUN FLOW ----
   const handleExecuteFlow = async () => {
     if (!isValidated) {
       const isValid = validateBeforeExecution(nodes);
@@ -175,7 +194,7 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     }
     setIsExecuting(true);
 
-    setNodes(currentNodes => 
+    setNodes(currentNodes =>
       currentNodes.map(node => ({
         ...node,
         data: {
@@ -213,7 +232,7 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
         await runSimulatedFlow(flowNodes, mockInput)
           .then(results => {
             console.log("Flow execution results:", results);
-            setNodes(currentNodes => 
+            setNodes(currentNodes =>
               currentNodes.map(node => ({
                 ...node,
                 data: {
@@ -229,7 +248,7 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
           })
           .catch(error => {
             console.error("Flow execution error:", error);
-            setNodes(currentNodes => 
+            setNodes(currentNodes =>
               currentNodes.map(node => ({
                 ...node,
                 data: {
@@ -282,7 +301,7 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
     }
   };
 
-  // ---- BUTTON: DELETE NODE (also exposed to config panel) ----
+  // ---- DELETE NODE ----
   const handleDeleteNode = (nodeId: string) => {
     setNodes(ns => ns.filter(n => n.id !== nodeId));
     setEdges(es => es.filter(e => e.source !== nodeId && e.target !== nodeId));
@@ -292,6 +311,16 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
       description: `Agent node '${nodeId}' deleted.`,
     });
   };
+
+  // On mount, if no localStorage data, save initial to storage
+  useEffect(() => {
+    if (!localStorage.getItem(LOCALSTORAGE_NODES_KEY)) {
+      localStorage.setItem(LOCALSTORAGE_NODES_KEY, JSON.stringify(nodes));
+    }
+    if (!localStorage.getItem(LOCALSTORAGE_EDGES_KEY)) {
+      localStorage.setItem(LOCALSTORAGE_EDGES_KEY, JSON.stringify(edges));
+    }
+  }, []); // only once on mount
 
   return (
     <div className="h-full w-full rounded-lg border border-gray-800 bg-gray-900">
@@ -343,7 +372,6 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
                   onClick={() => toast({ title: "Auto Layout", description: "This will be implemented soon!" })}
                   title="Auto Layout"
                 >
-                  {/* Could use an icon here as well if needed */}
                   Auto Layout
                 </button>
                 <button 
@@ -356,13 +384,37 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
                   <Play size={16} className="inline" />
                   {isExecuting ? 'Executing...' : 'Execute Flow'}
                 </button>
+                <button
+                  className="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 text-xs rounded flex items-center gap-1"
+                  onClick={handleSaveFlow}
+                  title="Save Flow"
+                >
+                  <Save size={16} className="inline" />
+                  Save
+                </button>
+                <button
+                  className="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 text-xs rounded flex items-center gap-1"
+                  onClick={() => toast({ title: "Code View", description: "Code export not implemented yet." })}
+                  title="Export"
+                >
+                  <Code size={16} className="inline" />
+                  Code
+                </button>
+                <button
+                  className="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 text-xs rounded flex items-center gap-1"
+                  onClick={() => toast({ title: "Settings", description: "Settings panel not implemented yet." })}
+                  title="Settings"
+                >
+                  <Settings size={16} className="inline" />
+                  Settings
+                </button>
               </div>
             </Panel>
           </ReactFlow>
         </div>
         {selectedNode && selectedNodeData && (
           <ConfigurationPanel 
-            node={selectedNodeData as ReactFlowNode<AgentNodeData>}
+            node={selectedNodeData as Node<AgentNodeData>}
             onNodeChange={(updater) => updateNodeData(selectedNode, updater)}
             onClose={() => setSelectedNode(null)}
             onDeleteNode={handleDeleteNode}
