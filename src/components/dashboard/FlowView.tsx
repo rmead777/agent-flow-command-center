@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { useNodesState, useEdgesState, addEdge, Connection, NodeMouseHandler, Node } from '@xyflow/react';
 import { FlowToolbar } from './FlowToolbar';
@@ -283,7 +282,7 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
         if (node.type === "inputPrompt" && "prompt" in nodeData) {
           return {
             id: node.id,
-            type: "inputPrompt" as "inputPrompt",
+            type: "inputPrompt",
             inputNodeIds: edges
               .filter(edge => edge.target === node.id)
               .map(edge => edge.source),
@@ -293,7 +292,7 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
         
         return {
           id: node.id,
-          type: node.type === "inputPrompt" ? "inputPrompt" : (nodeData.type as "input" | "model" | "action" | "output" | "inputPrompt"),
+          type: node.type === "inputPrompt" ? "inputPrompt" : (nodeData.type as "input" | "model" | "action" | "output"),
           modelId: "modelId" in nodeData ? nodeData.modelId : undefined,
           config: "config" in nodeData ? {
             ...nodeData.config,
