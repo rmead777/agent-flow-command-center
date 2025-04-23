@@ -3,13 +3,13 @@ import { X, Play, Pause, Trash, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { toast } from '@/components/ui/use-toast';
-import { ConfigurationPanelProps } from './types/configuration.types';
+import { ConfigurationPanelProps, AgentNodeData } from './types/configuration.types';
 import { GeneralSettingsPanel } from './panels/GeneralSettingsPanel';
 import { ModelSettingsPanel } from './panels/ModelSettingsPanel';
 import { ColorSettingsPanel } from './panels/ColorSettingsPanel';
 
 export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }: ConfigurationPanelProps) {
-  const data = node.data || {};
+  const data = node.data as AgentNodeData;
   const isRunning = data.status === 'active';
 
   const handlePlayPause = () => {
@@ -118,4 +118,3 @@ export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }
     </div>
   );
 }
-

@@ -54,4 +54,3 @@ export function ColorSettingsPanel({ node, onNodeChange }: BasePanelProps) {
     />
   );
 }
-

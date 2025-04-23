@@ -33,4 +33,3 @@ export interface BasePanelProps {
   node: ReactFlowNode<AgentNodeData>;
   onNodeChange: ConfigurationPanelProps['onNodeChange'];
 }
-
