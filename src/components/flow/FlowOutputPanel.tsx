@@ -25,6 +25,37 @@ interface FlowOutputPanelProps {
   title?: string;
 }
 
+// Helper function: extract only the main text output from typical model API responses
+function extractCleanText(data: any): string {
+  if (typeof data === 'string') {
+    return data;
+  }
+  if (data && typeof data === 'object') {
+    // If output looks like a model response object, parse "output", "content", or the OpenAI message content
+    if (typeof data.output === 'string') return data.output;
+    if (typeof data.content === 'string') return data.content;
+    // OpenAI
+    if (data.message && typeof data.message.content === 'string') return data.message.content;
+    // OpenAI chat completion response
+    if (data.choices?.[0]?.message?.content) return data.choices[0].message.content;
+    // Sometimes direct 'text'
+    if (typeof data.text === 'string') return data.text;
+  }
+  return typeof data === 'object' ? JSON.stringify(data) : String(data);
+}
+
+// For arrays of input data: only show their main "output" text
+function extractInputSummaries(input: any): string {
+  if (Array.isArray(input)) {
+    // Flatten: just the clean output for each input object (or string if not an obj)
+    const texts = input.map(item => extractCleanText(item));
+    return texts.join('\n---\n');
+  } else {
+    // Show just the output string if available
+    return extractCleanText(input);
+  }
+}
+
 export function FlowOutputPanel({ outputs, isVisible, onClose, title = "Flow Execution Results" }: FlowOutputPanelProps) {
   const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
 
@@ -47,33 +78,6 @@ export function FlowOutputPanel({ outputs, isVisible, onClose, title = "Flow Exe
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
-
-  // Helper function to extract clean text from API responses
-  const extractCleanText = (data: any): string => {
-    if (typeof data === 'string') return data;
-    
-    if (data && typeof data === 'object') {
-      // Check for common API response patterns
-      if (data.output) {
-        return typeof data.output === 'string' ? data.output : JSON.stringify(data.output);
-      }
-      if (data.content) {
-        return typeof data.content === 'string' ? data.content : JSON.stringify(data.content);
-      }
-      if (data.text) {
-        return typeof data.text === 'string' ? data.text : JSON.stringify(data.text);
-      }
-      if (data.message?.content) {
-        return data.message.content;
-      }
-      if (data.choices?.[0]?.message?.content) {
-        return data.choices[0].message.content;
-      }
-    }
-    
-    // Fallback to string representation if we couldn't extract clean text
-    return typeof data === 'object' ? JSON.stringify(data) : String(data);
   };
 
   return (
@@ -154,7 +158,7 @@ export function FlowOutputPanel({ outputs, isVisible, onClose, title = "Flow Exe
                     <div>
                       <h4 className="text-sm font-medium text-gray-400 mb-1">Input:</h4>
                       <div className="p-2 bg-gray-800 rounded-md text-xs overflow-x-auto whitespace-pre-wrap">
-                        {extractCleanText(output.input)}
+                        {extractInputSummaries(output.input)}
                       </div>
                     </div>
                     <div>
@@ -173,3 +177,4 @@ export function FlowOutputPanel({ outputs, isVisible, onClose, title = "Flow Exe
     </Card>
   );
 }
+

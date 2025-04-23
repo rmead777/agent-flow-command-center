@@ -14,6 +14,7 @@ import {
   EdgeProps,
   EdgeLabelRenderer,
   useStore,
+  getBezierPath,
 } from "@xyflow/react";
 import { AgentNode } from "@/components/flow/AgentNode";
 import { InputPromptNode } from "@/components/flow/InputPromptNode";
@@ -74,15 +75,23 @@ interface FlowGraphProps {
   children?: React.ReactNode;
 }
 
+// Custom edge with clickable delete button in the middle
 function DeletableEdge(props: EdgeProps) {
   const { id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, markerEnd, style } = props;
   const { setEdges } = useReactFlow();
-  
-  const edgePath = `M${sourceX},${sourceY} C${sourceX + 50},${sourceY} ${targetX - 50},${targetY} ${targetX},${targetY}`;
-  const midX = (sourceX + targetX) / 2;
-  const midY = (sourceY + targetY) / 2;
 
-  const handleDelete = () => {
+  // Use the same curve as reactflow's getBezierPath for consistent visuals
+  const [edgePath, labelX, labelY] = getBezierPath({
+    sourceX,
+    sourceY,
+    sourcePosition,
+    targetX,
+    targetY,
+    targetPosition,
+  });
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setEdges((edges: Edge[]) => edges.filter((edge) => edge.id !== id));
   };
 
@@ -98,14 +107,17 @@ function DeletableEdge(props: EdgeProps) {
         <div
           style={{
             position: 'absolute',
-            transform: `translate(-50%, -50%) translate(${midX}px,${midY}px)`,
+            transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
             pointerEvents: 'all',
-            zIndex: 1000
+            zIndex: 1000,
           }}
+          className="nodrag nopan"
         >
           <button
             className="flex items-center justify-center w-5 h-5 bg-gray-700 text-white rounded-full border border-gray-500 hover:bg-red-600 transition-colors"
+            title="Delete connection"
             onClick={handleDelete}
+            aria-label="Delete edge"
           >
             <X size={12} />
           </button>
@@ -173,3 +185,4 @@ export const FlowGraph: React.FC<FlowGraphProps> = ({
     </ReactFlow>
   );
 };
+
