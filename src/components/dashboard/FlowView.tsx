@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef, forwardRef, useImperativeHand
 import { useNodesState, useEdgesState, addEdge, Connection, NodeMouseHandler, Node } from '@xyflow/react';
 import { FlowToolbar } from './FlowToolbar';
 import { FlowGraph } from './FlowGraph';
-import { ConfigurationPanel } from '@/components/flow/ConfigurationPanel';
+import { ConfigurationPanel } from '@/components/flow/configuration/ConfigurationPanel';
 import { FlowOutputPanel, FlowOutput } from '@/components/flow/FlowOutputPanel';
 import { initialNodes, initialEdges } from '@/data/flowData';
 import { validateBeforeExecution } from '@/utils/modelValidation';
