@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
@@ -6,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown, ChevronRight, Download, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import ReactMarkdown from 'react-markdown';
 
 export interface FlowOutput {
   nodeId: string;
@@ -48,7 +48,37 @@ function extractInputSummaries(input: any): string {
 }
 
 function extractCleanText(data: any): string {
-  return extractJustOutputText(data) || (typeof data === 'object' ? JSON.stringify(data) : String(data));
+  const text = extractJustOutputText(data) || (typeof data === 'object' ? JSON.stringify(data) : String(data));
+  return text.trim();
+}
+
+function MarkdownContent({ content }: { content: string }) {
+  return (
+    <ReactMarkdown
+      components={{
+        h1: ({ children }) => <h1 className="text-2xl font-bold mb-4">{children}</h1>,
+        h2: ({ children }) => <h2 className="text-xl font-bold mb-3">{children}</h2>,
+        h3: ({ children }) => <h3 className="text-lg font-bold mb-2">{children}</h3>,
+        p: ({ children }) => <p className="mb-4">{children}</p>,
+        ul: ({ children }) => <ul className="list-disc pl-6 mb-4">{children}</ul>,
+        ol: ({ children }) => <ol className="list-decimal pl-6 mb-4">{children}</ol>,
+        li: ({ children }) => <li className="mb-1">{children}</li>,
+        code: ({ children }) => (
+          <code className="bg-gray-100 px-1 py-0.5 rounded font-mono text-sm">{children}</code>
+        ),
+        pre: ({ children }) => (
+          <pre className="bg-gray-100 p-3 rounded-md mb-4 overflow-x-auto">{children}</pre>
+        ),
+        blockquote: ({ children }) => (
+          <blockquote className="border-l-4 border-gray-300 pl-4 italic mb-4">{children}</blockquote>
+        ),
+        em: ({ children }) => <em className="italic">{children}</em>,
+        strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
 }
 
 export function FlowOutputPanel({ outputs, isVisible, onClose, title = "Flow Execution Results" }: FlowOutputPanelProps) {
@@ -118,7 +148,7 @@ export function FlowOutputPanel({ outputs, isVisible, onClose, title = "Flow Exe
               const systemPrompt = output.config?.systemPrompt || '';
 
               return (
-                <Collapsible 
+                <Collapsible
                   key={nodeKey}
                   open={isExpanded} 
                   onOpenChange={() => toggleNodeExpansion(nodeKey)}
@@ -158,22 +188,22 @@ export function FlowOutputPanel({ outputs, isVisible, onClose, title = "Flow Exe
                       {output.input && (
                         <div>
                           <h4 className="text-sm font-medium text-gray-600 mb-2">Input:</h4>
-                          <div className="p-3 bg-gray-50 rounded-md text-sm overflow-x-auto whitespace-pre-wrap font-mono">
-                            {extractInputSummaries(output.input)}
+                          <div className="p-3 bg-gray-50 rounded-md text-sm overflow-x-auto">
+                            <MarkdownContent content={extractInputSummaries(output.input)} />
                           </div>
                         </div>
                       )}
                       <div>
                         <h4 className="text-sm font-medium text-gray-600 mb-2">Output:</h4>
-                        <div className="p-3 bg-gray-50 rounded-md text-sm overflow-x-auto whitespace-pre-wrap font-mono">
-                          {extractCleanText(output.output)}
+                        <div className="p-3 bg-gray-50 rounded-md text-sm overflow-x-auto">
+                          <MarkdownContent content={extractCleanText(output.output)} />
                         </div>
                       </div>
                       {systemPrompt && (
                         <div>
                           <h4 className="text-sm font-medium text-gray-600 mb-2">System Prompt:</h4>
-                          <div className="p-3 bg-gray-50 rounded-md text-sm overflow-x-auto whitespace-pre-wrap font-mono text-blue-600">
-                            {systemPrompt}
+                          <div className="p-3 bg-gray-50 rounded-md text-sm overflow-x-auto text-blue-600">
+                            <MarkdownContent content={systemPrompt} />
                           </div>
                         </div>
                       )}
