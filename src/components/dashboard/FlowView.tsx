@@ -20,12 +20,10 @@ import { initialNodes, initialEdges } from '@/data/flowData';
 import { validateBeforeExecution } from '@/utils/modelValidation';
 import { toast } from '@/components/ui/use-toast';
 import { runSimulatedFlow } from '@/flow/MockRunner';
-
-// Import the AgentNodeData interface
-import { FlowNode as FlowNodeType } from '@/flow/types';
+import { FlowNode } from '@/flow/types';
 
 // Define the AgentNodeData type to match the one in ConfigurationPanel
-interface AgentNodeData extends Record<string, unknown> {
+interface AgentNodeData {
   label: string;
   type: string;
   status?: 'active' | 'idle' | 'error';
@@ -50,7 +48,9 @@ const nodeTypes = {
 };
 
 export function FlowView() {
-  const [nodes, setNodes, onNodesChange] = useNodesState<AgentNodeData>(initialNodes as ReactFlowNode<AgentNodeData>[]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<AgentNodeData>(
+    initialNodes as ReactFlowNode<AgentNodeData>[]
+  );
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [isValidated, setIsValidated] = useState(false);
@@ -116,31 +116,60 @@ export function FlowView() {
       );
 
       if (hasMockModel) {
+        // Convert ReactFlow nodes to FlowNode format for the simulator
+        const flowNodes: FlowNode[] = nodes.map(node => ({
+          id: node.id,
+          type: node.data.type as "input" | "model" | "action" | "output",
+          modelId: node.data.modelId,
+          config: node.data.config,
+          // Find input nodes by looking at edges
+          inputNodeIds: edges
+            .filter(edge => edge.target === node.id)
+            .map(edge => edge.source)
+        }));
+
         // Run the simulated flow for mock models
-        await runSimulatedFlow(nodes, (nodeId, status, message) => {
-          // Update node status based on the callback
-          updateNodeData(nodeId, (node) => ({
-            ...node,
-            data: {
-              ...node.data,
-              status: status as 'active' | 'idle' | 'error'
-            }
-          }));
-          
-          // Show toast message if provided
-          if (message) {
+        const mockInput = { 'node-1': 'Test input data' }; // Simulated input
+        await runSimulatedFlow(flowNodes, mockInput)
+          .then(results => {
+            console.log("Flow execution results:", results);
+            
+            // Update node status based on results
+            setNodes(currentNodes => 
+              currentNodes.map(node => ({
+                ...node,
+                data: {
+                  ...node.data,
+                  status: 'idle' // Success status
+                }
+              }))
+            );
+            
             toast({
-              title: `Node ${nodeId} ${status === 'error' ? 'Error' : 'Update'}`,
-              description: message,
-              variant: status === 'error' ? 'destructive' : 'default'
+              title: "Flow Execution Completed",
+              description: "Mock simulation has finished successfully",
             });
-          }
-        });
-        
-        toast({
-          title: "Flow Execution Completed",
-          description: "Mock simulation has finished",
-        });
+          })
+          .catch(error => {
+            console.error("Flow execution error:", error);
+            
+            // Mark nodes as error state
+            setNodes(currentNodes => 
+              currentNodes.map(node => ({
+                ...node,
+                data: {
+                  ...node.data,
+                  status: 'error'
+                }
+              }))
+            );
+            
+            toast({
+              title: "Flow Execution Error",
+              description: error.message || "An error occurred during flow execution",
+              variant: "destructive"
+            });
+          });
       } else {
         // For non-mock models, show appropriate message
         toast({
@@ -258,4 +287,3 @@ export function FlowView() {
     </div>
   );
 }
-
