@@ -110,6 +110,13 @@ export const FlowView = forwardRef<FlowViewHandle>((props, ref) => {
   const [panelOpen, setPanelOpen] = useState(false);
   const isMobile = useIsMobile();
 
+  const closePanel = useCallback(() => {
+    if (isMobile) {
+      setPanelOpen(false);
+    }
+    setSelectedNode(null);
+  }, [isMobile]);
+
   useImperativeHandle(ref, () => ({
     runFlow: () => handleExecuteFlow(),
     saveFlow: handleSaveFlow,
