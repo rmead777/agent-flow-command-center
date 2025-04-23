@@ -55,18 +55,18 @@ export function FlowView() {
   const [isValidated, setIsValidated] = useState(false);
 
   const onConnect = useCallback(
-    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
+    (params) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
 
-  const onNodeClick = (_: React.MouseEvent, node: ReactFlowNode<AgentNodeData>) => {
+  const onNodeClick = (_: React.MouseEvent, node) => {
     setSelectedNode(node.id);
   };
 
   const selectedNodeData = selectedNode ? nodes.find(n => n.id === selectedNode) : null;
 
-  const updateNodeData = (nodeId: string, updater: (prev: ReactFlowNode<AgentNodeData>) => ReactFlowNode<AgentNodeData>) => {
-    setNodes((ns) => ns.map(n => (n.id === nodeId ? updater(n as ReactFlowNode<AgentNodeData>) : n)));
+  const updateNodeData = (nodeId, updater) => {
+    setNodes((ns) => ns.map(n => (n.id === nodeId ? updater(n) : n)));
   };
 
   useEffect(() => {
@@ -78,7 +78,6 @@ export function FlowView() {
     if (!isValidated) {
       const isValid = validateBeforeExecution(nodes);
       setIsValidated(isValid);
-      
       if (!isValid) {
         toast({
           title: "Validation Failed",
@@ -88,11 +87,18 @@ export function FlowView() {
         return;
       }
     }
-    
     toast({
       title: "Flow Execution",
       description: "Flow validated successfully and ready for execution",
     });
+  };
+
+  // Node DELETION
+  const handleDeleteNode = (nodeId: string) => {
+    // Remove the node and any connected edges
+    setNodes(ns => ns.filter(n => n.id !== nodeId));
+    setEdges(es => es.filter(e => e.source !== nodeId && e.target !== nodeId));
+    setSelectedNode(null);
   };
 
   return (
@@ -149,9 +155,10 @@ export function FlowView() {
         </div>
         {selectedNode && selectedNodeData && (
           <ConfigurationPanel 
-            node={selectedNodeData as ReactFlowNode<AgentNodeData>}
+            node={selectedNodeData}
             onNodeChange={(updater) => updateNodeData(selectedNode, updater)}
             onClose={() => setSelectedNode(null)}
+            onDeleteNode={handleDeleteNode}
           />
         )}
       </div>

@@ -17,6 +17,7 @@ import { PROVIDERS } from '@/pages/api-keys/apiKeyProviders';
 import { getAdapter, getModelsByProvider } from '@/adapters/adapterRegistry';
 import { useState, useEffect } from 'react';
 import { Node as ReactFlowNode } from '@xyflow/react';
+import { toast } from '@/components/ui/use-toast';
 
 // Define a proper type for the node data
 interface AgentNodeData extends Record<string, unknown> {
@@ -43,16 +44,21 @@ interface ConfigurationPanelProps {
   node: ReactFlowNode<AgentNodeData>;
   onNodeChange: (updater: (prev: ReactFlowNode<AgentNodeData>) => ReactFlowNode<AgentNodeData>) => void;
   onClose: () => void;
+  // Optional, injected by FlowView
+  onDeleteNode?: (nodeId: string) => void;
 }
 
 // LocalStorage keys for provider, model, and type selections
 const STORAGE_KEY_PREFIX = 'flow_config_';
 const getNodeStorageKey = (nodeId: string, field: string) => `${STORAGE_KEY_PREFIX}${nodeId}_${field}`;
 
-export function ConfigurationPanel({ node, onNodeChange, onClose }: ConfigurationPanelProps) {
+export function ConfigurationPanel({ node, onNodeChange, onClose, onDeleteNode }: ConfigurationPanelProps) {
   const data = node.data || {} as AgentNodeData;
   const [tempProvider, setTempProvider] = useState<string>("");
   const [tempAgentType, setTempAgentType] = useState<string>("");
+
+  // Track toasts for mock explanation so we don't spam
+  const [hasShownMockHint, setHasShownMockHint] = useState(false);
 
   // Helper: Get full models by provider mapping
   const modelsByProvider = getModelsByProvider();
@@ -103,10 +109,10 @@ export function ConfigurationPanel({ node, onNodeChange, onClose }: Configuratio
     } else {
       setTempAgentType("");
     }
+    setHasShownMockHint(false); // Reset hint display when node changes
     // eslint-disable-next-line
   }, [node.id]);
 
-  // Controlled fields: always use node-prop as source of truth. Local state only for slider, but write-through.
   const selectedProvider = tempProvider;
   const selectedModel = data.modelId || "";
   const availableModels = selectedProvider ? modelsByProvider[selectedProvider] || [] : [];
@@ -198,6 +204,51 @@ export function ConfigurationPanel({ node, onNodeChange, onClose }: Configuratio
   // --- Clarify status: If status === 'active', show pause button ("running") ---
   const isRunning = data.status === 'active';
 
+  // Play/Pause functionality
+  const handlePlayPause = () => {
+    onNodeChange(prev => ({
+      ...prev,
+      data: {
+        ...prev.data,
+        status: isRunning ? 'idle' : 'active'
+      }
+    }));
+  };
+
+  // Delete functionality
+  const handleDeleteNode = () => {
+    // If parent provided delete fn, use it
+    if (onDeleteNode) {
+      onDeleteNode(node.id);
+      toast({
+        title: "Agent Node Deleted",
+        description: "This agent node was removed from your flow."
+      });
+      onClose();
+    } else {
+      toast({
+        title: "Delete Not Supported",
+        description: "Node deletion is currently not available here.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Show a quick toast when Mock selected (provider/model)
+  useEffect(() => {
+    if (
+      selectedProvider === "Mock" &&
+      selectedModel === "mock-model" &&
+      !hasShownMockHint
+    ) {
+      toast({
+        title: "Mock Model Selected",
+        description: "This agent will simulate output using MockAdapter. No real API calls will be made.",
+      });
+      setHasShownMockHint(true);
+    }
+  }, [selectedProvider, selectedModel, hasShownMockHint]);
+
   return (
     <div className="h-full w-80 flex-shrink-0 overflow-auto border-l border-gray-800 bg-gray-900 p-4">
       <div className="mb-4 flex items-center justify-between">
@@ -222,6 +273,16 @@ export function ConfigurationPanel({ node, onNodeChange, onClose }: Configuratio
         </div>
         <div className="text-xs text-gray-400">ID: {node.id}</div>
       </div>
+
+      {selectedProvider === "Mock" && selectedModel === "mock-model" && (
+        <div className="mb-4 rounded border border-blue-700 bg-blue-950/70 p-3 text-xs text-blue-300">
+          <b>Mock Model Info: </b>
+          <span>
+            This agent will run a simulated model. Use this for UI or logic testing. Outputs will look like: <br />
+            <span className="font-mono">[Simulated output for: ...]</span>
+          </span>
+        </div>
+      )}
 
       <Separator className="my-4 bg-gray-800" />
 
@@ -336,12 +397,17 @@ export function ConfigurationPanel({ node, onNodeChange, onClose }: Configuratio
         <Button 
           variant="outline" 
           className={`flex-1 gap-2 ${isRunning ? 'border-amber-700 text-amber-400' : 'border-emerald-700 text-emerald-400'}`}
+          onClick={handlePlayPause}
         >
           {isRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           <span>{isRunning ? 'Pause' : 'Start'}</span>
         </Button>
 
-        <Button variant="outline" className="flex-1 gap-2 border-red-700 text-red-400">
+        <Button 
+          variant="outline" 
+          className="flex-1 gap-2 border-red-700 text-red-400"
+          onClick={handleDeleteNode}
+        >
           <Trash className="h-4 w-4" />
           <span>Delete</span>
         </Button>
