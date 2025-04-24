@@ -1,5 +1,4 @@
-
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
@@ -11,13 +10,19 @@ import APIKeysPage from "@/pages/APIKeysPage";
 import ModelSystemValidator from "@/components/admin/ModelSystemValidator";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 
 type View = "flow" | "metrics" | "logs" | "api-keys" | "system-validator";
 
 const Dashboard = () => {
-  const [currentView, setCurrentView] = useState<View>("flow");
-  const isMobile = useIsMobile();
+  const [currentView, setCurrentView] = useState<View>(() => {
+    const savedView = localStorage.getItem('dashboard-active-view');
+    return (savedView as View) || "flow";
+  });
+
+  useEffect(() => {
+    localStorage.setItem('dashboard-active-view', currentView);
+  }, [currentView]);
+
   const [notifications, setNotifications] = useState<
     Array<{
       id: string;
@@ -40,13 +45,10 @@ const Dashboard = () => {
     },
   ]);
 
-  // --- Master user prompt state ---
   const [masterUserPrompt, setMasterUserPrompt] = useState<string>("");
 
-  // --- FlowView ref for button handlers ---
   const flowViewRef = useRef<FlowViewHandle>(null);
 
-  // --- Callbacks for DashboardHeader buttons ---
   const handleRunFlow = () => {
     flowViewRef.current?.runFlow();
   };
@@ -63,7 +65,12 @@ const Dashboard = () => {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background text-foreground">
-        <DashboardSidebar currentView={currentView} setCurrentView={setCurrentView as any} />
+        <DashboardSidebar 
+          currentView={currentView} 
+          setCurrentView={(view) => {
+            setCurrentView(view as View);
+          }} 
+        />
         <div className="flex flex-1 flex-col">
           <NotificationBar notifications={notifications} />
           <DashboardHeader
@@ -72,7 +79,6 @@ const Dashboard = () => {
             onCode={handleCode}
             onSettings={handleSettings}
           />
-          {/* Show master user prompt field only on the flow view */}
           {currentView === "flow" && (
             <div className="bg-gray-950 border-b border-gray-800 p-3 flex gap-2 items-center">
               <label htmlFor="masterUserPrompt" className="text-sm font-medium text-gray-300 mr-2 flex-shrink-0">User Prompt:</label>
@@ -89,21 +95,27 @@ const Dashboard = () => {
           )}
           <main className="flex-1 overflow-auto p-4">
             <div className={isMobile ? "h-[500px]" : "h-[calc(100vh-130px)]"}>
-              {currentView === "flow" && (
+              <div style={{ display: currentView === "flow" ? "block" : "none" }}>
                 <FlowView
                   ref={flowViewRef}
                   masterUserPrompt={masterUserPrompt}
                 />
-              )}
-              {currentView === "metrics" && <AgentMetricsView />}
-              {currentView === "logs" && <LogsView />}
-              {currentView === "api-keys" && <APIKeysPage />}
-              {currentView === "system-validator" && (
+              </div>
+              <div style={{ display: currentView === "metrics" ? "block" : "none" }}>
+                <AgentMetricsView />
+              </div>
+              <div style={{ display: currentView === "logs" ? "block" : "none" }}>
+                <LogsView />
+              </div>
+              <div style={{ display: currentView === "api-keys" ? "block" : "none" }}>
+                <APIKeysPage />
+              </div>
+              <div style={{ display: currentView === "system-validator" ? "block" : "none" }}>
                 <div className="max-w-4xl mx-auto">
                   <h1 className="text-2xl font-bold mb-6">System Validation</h1>
                   <ModelSystemValidator />
                 </div>
-              )}
+              </div>
             </div>
           </main>
         </div>
