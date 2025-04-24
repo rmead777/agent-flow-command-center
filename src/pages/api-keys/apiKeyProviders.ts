@@ -17,7 +17,9 @@ export const PROVIDERS = [
     models: [
       'claude-3-7-sonnet-20250224',
       'claude-3-7-opus-20250224',
-      'claude-3-5-sonnet-20250119'
+      'claude-3-5-sonnet-20250119',
+      'claude-3.7-sonnet',
+      'claude-3.7-sonnet-20250219'
     ]
   },
   {

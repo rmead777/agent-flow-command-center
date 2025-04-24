@@ -1,3 +1,4 @@
+
 import { ModelAdapter } from "./ModelAdapter";
 import { OpenAIAdapter } from "./OpenAIAdapter";
 import { AnthropicAdapter } from "./AnthropicAdapter";
@@ -25,6 +26,9 @@ export const adapterRegistry: Record<string, ModelAdapter> = {
   "claude-3-7-sonnet-20250224": new AnthropicAdapter("claude-3-7-sonnet-20250224"),
   "claude-3-7-opus-20250224": new AnthropicAdapter("claude-3-7-opus-20250224"),
   "claude-3-5-sonnet-20250119": new AnthropicAdapter("claude-3-5-sonnet-20250119"),
+  // Add support for the model being used
+  "claude-3.7-sonnet": new AnthropicAdapter("claude-3-7-sonnet-20250224"),
+  "claude-3.7-sonnet-20250219": new AnthropicAdapter("claude-3.7-sonnet-20250219"),
   
   // Google Models
   "gemini-2.5-flash": new GoogleAdapter("gemini-2.5-flash"),
