@@ -99,36 +99,28 @@ export async function executeAnthropic(userId: string, modelId: string, request:
       };
     }
     
-    console.log(`Making request to Anthropic API for model: ${modelId}`);
+    console.log(`Making request to Anthropic Edge Function for model: ${modelId}`);
     
-    const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
+    const { data, error } = await supabase.functions.invoke('anthropic', {
+      body: {
         model: modelId,
-        system: request.system,
         messages: request.messages,
-        max_tokens: request.max_tokens,
-        temperature: request.temperature
-      })
-    });
-    
-    if (!anthropicResponse.ok) {
-      const errorData = await anthropicResponse.json();
+        system: request.system,
+        temperature: request.temperature,
+        max_tokens: request.max_tokens
+      }
+    })
+
+    if (error) {
+      console.error('Edge function error:', error);
       return {
         error: true,
-        status: anthropicResponse.status,
-        message: `Anthropic API error: ${errorData.error?.message || 'Unknown error'}`,
-        details: errorData
+        status: error.status || 500,
+        message: `Edge function error: ${error.message || 'Unknown error'}`,
+        details: error
       };
     }
-    
-    const data = await anthropicResponse.json();
-    
+
     // Format response to match our standard format
     const formattedResponse = {
       choices: [{

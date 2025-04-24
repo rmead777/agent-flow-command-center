@@ -1,1 +1,5 @@
+
 project_id = "ozpqwidaeqjffrzqghwj"
+
+[functions.anthropic]
+verify_jwt = true
