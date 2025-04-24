@@ -1,13 +1,11 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { listUserFlows, UserFlow } from "@/data/workflowStorage";
-
 export function LoadWorkflowDialog({
   open,
   onClose,
-  onLoad,
+  onLoad
 }: {
   open: boolean;
   onClose: () => void;
@@ -15,7 +13,6 @@ export function LoadWorkflowDialog({
 }) {
   const [flows, setFlows] = useState<UserFlow[]>([]);
   const [loading, setLoading] = useState(false);
-
   useEffect(() => {
     if (open) {
       setLoading(true);
@@ -25,35 +22,26 @@ export function LoadWorkflowDialog({
       });
     }
   }, [open]);
-
-  return (
-    <Dialog open={open} onOpenChange={val => !val && onClose()}>
-      <DialogContent>
+  return <Dialog open={open} onOpenChange={val => !val && onClose()}>
+      <DialogContent className="bg-yellow-50">
         <DialogHeader>
           <DialogTitle>Load Saved Workflow</DialogTitle>
         </DialogHeader>
-        {loading ? (
-          <div className="py-4 text-center text-muted">Loading...</div>
-        ) : (
-          <div className="space-y-2">
+        {loading ? <div className="py-4 text-center text-muted">Loading...</div> : <div className="space-y-2">
             {flows.length === 0 && <div className="text-sm text-muted">No saved workflows found.</div>}
-            {flows.map(flow => (
-              <div key={flow.id} className="flex justify-between items-center border rounded px-3 py-2 bg-gray-800">
+            {flows.map(flow => <div key={flow.id} className="flex justify-between items-center border rounded px-3 py-2 bg-gray-800">
                 <div>
                   <span className="font-medium">{flow.name}</span>
                   <span className="ml-2 text-xs text-gray-400">{new Date(flow.updated_at).toLocaleString()}</span>
                 </div>
-                <Button
-                  className="px-3 py-1 text-xs"
-                  onClick={() => { onLoad(flow); onClose(); }}
-                >
+                <Button className="px-3 py-1 text-xs" onClick={() => {
+            onLoad(flow);
+            onClose();
+          }}>
                   Load
                 </Button>
-              </div>
-            ))}
-          </div>
-        )}
+              </div>)}
+          </div>}
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>;
 }
