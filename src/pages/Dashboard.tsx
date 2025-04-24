@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
@@ -22,6 +23,8 @@ const Dashboard = () => {
   useEffect(() => {
     localStorage.setItem('dashboard-active-view', currentView);
   }, [currentView]);
+  
+  const isMobile = useIsMobile();
 
   const [notifications, setNotifications] = useState<
     Array<{

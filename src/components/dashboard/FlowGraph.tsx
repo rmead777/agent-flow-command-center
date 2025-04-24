@@ -157,10 +157,9 @@ export const FlowGraph: React.FC<FlowGraphProps> = ({
       onNodeClick={onNodeClick}
       nodeTypes={nodeTypes}
       edgeTypes={edgeTypes}
-      fitViewOnInit
+      fitView={false}
       className="bg-[#0F0F1A]"
       defaultEdgeOptions={{ animated: true }}
-      fitView={false}
     >
       <Controls className="bg-gray-800 text-white" />
       <MiniMap
