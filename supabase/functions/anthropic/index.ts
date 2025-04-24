@@ -6,6 +6,21 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Valid model names in Anthropic's format
+const validModels = [
+  'claude-3-opus-20240229',
+  'claude-3-sonnet-20240229'
+];
+
+// Map our model names to Anthropic's format
+const modelNameMapping: Record<string, string> = {
+  'claude-3-7-opus-20250224': 'claude-3-opus-20240229',
+  'claude-3-7-sonnet-20250224': 'claude-3-sonnet-20240229',
+  'claude-3-5-sonnet-20250119': 'claude-3-sonnet-20240229',
+  'claude-3.7-sonnet': 'claude-3-sonnet-20240229',
+  'claude-3.7-sonnet-20250219': 'claude-3-sonnet-20240229'
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -20,7 +35,17 @@ serve(async (req) => {
       throw new Error('Anthropic API key not configured')
     }
 
-    console.log('Making request to Anthropic API:', { model, system })
+    // Map the model name to the correct Anthropic format
+    const anthropicModelName = modelNameMapping[model] || model
+    if (!validModels.includes(anthropicModelName)) {
+      throw new Error(`Invalid model name: ${model}. Available models are: ${validModels.join(', ')}`)
+    }
+
+    console.log('Making request to Anthropic API:', { 
+      originalModel: model,
+      mappedModel: anthropicModelName,
+      system 
+    })
 
     // Filter out any messages with empty content
     const validMessages = messages.filter(msg => msg.content && msg.content.trim() !== '')
@@ -38,7 +63,7 @@ serve(async (req) => {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model,
+        model: anthropicModelName,
         messages: validMessages.map(msg => ({
           role: msg.role === 'system' ? 'assistant' : msg.role,
           content: msg.content
@@ -52,7 +77,7 @@ serve(async (req) => {
     if (!response.ok) {
       const error = await response.json()
       console.error('Anthropic API error:', error)
-      throw new Error(error.error?.message || 'Failed to generate response')
+      throw new Error(`Anthropic API error: ${error.error?.message || 'Unknown error'}`)
     }
 
     const data = await response.json()
@@ -72,3 +97,4 @@ serve(async (req) => {
     )
   }
 })
+
