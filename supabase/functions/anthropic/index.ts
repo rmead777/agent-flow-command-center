@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
@@ -7,12 +8,14 @@ const corsHeaders = {
 
 // Valid model names in Anthropic's format
 const validModels = [
-  'claude-3-sonnet-20240229'
+  'claude-3-haiku-20240307',
+  'claude-3-sonnet-20240229',
+  'claude-3-opus-20240229'
 ];
 
 // Map our model names to Anthropic's format
 const modelNameMapping: Record<string, string> = {
-  'claude-3-7-sonnet-20250219': 'claude-3-sonnet-20240229'
+  'claude-3-7-sonnet-20250219': 'claude-3-haiku-20240307'
 };
 
 serve(async (req) => {
@@ -71,7 +74,7 @@ serve(async (req) => {
     if (!response.ok) {
       const error = await response.json()
       console.error('Anthropic API error:', error)
-      throw new Error(`Anthropic API error: ${error.error?.message || 'Unknown error'}`)
+      throw new Error(`Anthropic API error: ${error.error?.message || JSON.stringify(error)}`)
     }
 
     const data = await response.json()
