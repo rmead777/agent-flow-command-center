@@ -5,40 +5,22 @@ export class AnthropicAdapter implements ModelAdapter {
   modelName: string;
   providerName = "Anthropic";
   supportedFeatures = ["text"];
-  isReasoningMode: boolean;
 
-  constructor(modelName = "claude-3.7-sonnet") {
-    // Check if this is the reasoning variant
-    this.isReasoningMode = modelName.includes("-reasoning");
-    
-    // Store the base model name without the reasoning suffix
-    this.modelName = modelName.replace("-reasoning", "");
+  constructor(modelName: string) {
+    this.modelName = modelName;
   }
 
   buildRequest(input: string, config: any) {
-    // Enable reasoning mode either through the model name or config
-    const useReasoning = this.isReasoningMode || config.enableReasoning;
-    
-    // Create standard request object
-    const request = {
+    // Create request object following Anthropic's API format
+    return {
       model: this.modelName,
       messages: [
         { role: "system", content: config.systemPrompt || "You are Claude, a helpful AI assistant." },
         { role: "user", content: input }
       ],
-      temperature: config.temperature ?? 0.7,
-      max_tokens: config.maxTokens ?? 512,
+      max_tokens: config.maxTokens ?? 1024,
+      temperature: config.temperature ?? 0.7
     };
-    
-    // Add reasoning flag if needed
-    if (useReasoning) {
-      return {
-        ...request,
-        reasoning: true, // Enable Claude's reasoning capability
-      };
-    }
-    
-    return request;
   }
 
   parseResponse(response: any) {
@@ -58,20 +40,10 @@ export class AnthropicAdapter implements ModelAdapter {
   }
 
   getDefaultConfig() {
-    const baseConfig = {
+    return {
       temperature: 0.7,
-      maxTokens: 512,
+      maxTokens: 1024,
       systemPrompt: "You are Claude, a helpful AI assistant."
     };
-    
-    // Add enableReasoning flag for the reasoning variant
-    if (this.isReasoningMode) {
-      return {
-        ...baseConfig,
-        enableReasoning: true
-      };
-    }
-    
-    return baseConfig;
   }
 }

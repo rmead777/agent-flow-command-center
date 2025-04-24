@@ -99,7 +99,7 @@ export async function executeAnthropic(userId: string, modelId: string, request:
       };
     }
     
-    // Make the request to Anthropic API
+    // Make the request to Anthropic API with correct headers
     console.log(`Making request to Anthropic API for model: ${modelId}`);
     
     const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
@@ -129,7 +129,7 @@ export async function executeAnthropic(userId: string, modelId: string, request:
     
     const data = await anthropicResponse.json();
     
-    // Convert Anthropic response format to standardized format
+    // Format response to match our standard format
     const formattedResponse = {
       choices: [{
         message: {

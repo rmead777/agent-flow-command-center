@@ -21,11 +21,10 @@ export const adapterRegistry: Record<string, ModelAdapter> = {
   "o3-mini": new OpenAIAdapter("o3-mini"),
   "o4-mini": new OpenAIAdapter("o4-mini"),
 
-  // Anthropic Models
-  "claude-3.7-sonnet": new AnthropicAdapter("claude-3.7-sonnet"),
-  "claude-3.7-opus": new AnthropicAdapter("claude-3.7-opus"),
-  "claude-3.5-sonnet": new AnthropicAdapter("claude-3.5-sonnet"),
-  "claude-3.7-sonnet-reasoning": new AnthropicAdapter("claude-3.7-sonnet"), // Same model, reasoning toggled via config
+  // Anthropic Models with correct names
+  "claude-3-7-sonnet-20250219": new AnthropicAdapter("claude-3-7-sonnet-20250219"),
+  "claude-3-7-opus-20250219": new AnthropicAdapter("claude-3-7-opus-20250219"),
+  "claude-3-5-sonnet-20250119": new AnthropicAdapter("claude-3-5-sonnet-20250119"),
   
   // Google Models
   "gemini-2.5-flash": new GoogleAdapter("gemini-2.5-flash"),
