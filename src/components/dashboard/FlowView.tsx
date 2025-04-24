@@ -447,7 +447,7 @@ export const FlowView = forwardRef<FlowViewHandle, FlowViewProps>(({
     });
   };
   return <div className="h-full w-full rounded-lg border border-gray-800 flex flex-col relative bg-slate-300">
-      <div className="flex-1 relative min-h-0">
+      <div className="flex-1 relative min-h-0 bg-slate-50">
         <FlowGraph nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={onNodeClick} onDeleteEdge={handleDeleteEdge}>
           <div className="absolute top-2 right-2 z-10 flex gap-2">
             <FlowToolbar onAddNode={() => handleAddNode()} onAutoLayout={handleAutoLayout} onExecuteFlow={handleExecuteFlow} onSaveFlow={handleSaveFlow} onShowCode={() => toast({
