@@ -40,7 +40,7 @@ export const FlowToolbar: React.FC<FlowToolbarProps> = ({
       <Play size={16} />
       {isExecuting ? "Executing..." : "Execute Flow"}
     </Button>
-    <Button onClick={onSaveFlow} title="Save Flow" className="text-white px-2 py-1 text-xs rounded flex items-center gap-1 bg-sky-950 hover:bg-sky-800">
+    <Button onClick={onSaveFlow} title="Save Flow" className="text-white px-2 py-1 text-xs rounded flex items-center gap-1 bg-sky-950 hover:bg-sky-800 my-0 mx-[37px]">
       <Save size={16} />
       Save
     </Button>

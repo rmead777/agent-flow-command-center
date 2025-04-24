@@ -457,7 +457,7 @@ export const FlowView = forwardRef<FlowViewHandle, FlowViewProps>(({
             title: "Settings",
             description: "Settings panel not implemented yet."
           })} onToggleOutputPanel={toggleOutputPanel} isValidated={isValidated} isExecuting={isExecuting} showOutputPanel={showOutputPanel} flowOutputsLength={flowOutputs.length} />
-            <Button variant="outline" className="text-gray-300 px-3 py-1" onClick={handleLoadWorkflow}>
+            <Button variant="outline" onClick={handleLoadWorkflow} className="text-gray-300 py-1 bg-indigo-950 hover:bg-indigo-800 px-[19px] my-[9px]">
               Load Workflow
             </Button>
           </div>
