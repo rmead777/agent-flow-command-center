@@ -27,7 +27,7 @@ export const FlowToolbar: React.FC<FlowToolbarProps> = ({
   isExecuting,
   flowOutputsLength,
   showOutputPanel
-}) => <div className="backdrop-blur-sm p-2 rounded-md border border-gray-800 flex gap-2 mx-[240px] px-[116px] py-[6px] my-0 bg-transparent">
+}) => <div className="backdrop-blur-sm p-2 border border-gray-800 flex gap-2 mx-[240px] px-[116px] py-[6px] my-0 rounded-none bg-transparent">
     <Button className="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 text-xs rounded flex items-center gap-1" onClick={onAddNode} title="Add Node">
       <Plus size={16} />
       Add Node
