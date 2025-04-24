@@ -23,13 +23,13 @@ export function LoadWorkflowDialog({
     }
   }, [open]);
   return <Dialog open={open} onOpenChange={val => !val && onClose()}>
-      <DialogContent className="bg-stone-200">
+      <DialogContent className="bg-slate-900">
         <DialogHeader>
           <DialogTitle>Load Saved Workflow</DialogTitle>
         </DialogHeader>
         {loading ? <div className="py-4 text-center text-muted">Loading...</div> : <div className="space-y-2">
             {flows.length === 0 && <div className="text-sm text-muted">No saved workflows found.</div>}
-            {flows.map(flow => <div key={flow.id} className="flex justify-between items-center border rounded px-3 py-2 bg-stone-300">
+            {flows.map(flow => <div key={flow.id} className="flex justify-between items-center border px-3 py-2 bg-stone-200 rounded-md">
                 <div>
                   <span className="font-medium">{flow.name}</span>
                   <span className="ml-2 text-xs text-zinc-950">{new Date(flow.updated_at).toLocaleString()}</span>
