@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   ReactFlow,
@@ -76,12 +75,10 @@ interface FlowGraphProps {
   children?: React.ReactNode;
 }
 
-// Custom edge with clickable delete button in the middle
 function DeletableEdge(props: EdgeProps) {
   const { id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, markerEnd, style } = props;
   const { setEdges } = useReactFlow();
 
-  // Use the same curve as reactflow's getBezierPath for consistent visuals
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,

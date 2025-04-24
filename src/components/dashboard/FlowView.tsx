@@ -17,6 +17,7 @@ import { saveUserFlow, loadUserFlow } from "@/data/workflowStorage";
 import { Button } from "@/components/ui/button";
 import { executeNode } from '@/flow/executeNode';
 import { resolveDAG } from '@/flow/resolveDAG';
+
 interface AgentNodeData {
   label: string;
   type: string;
@@ -38,6 +39,7 @@ interface AgentNodeData {
   color?: string;
   [key: string]: any;
 }
+
 interface InputPromptNodeData {
   prompt?: string;
   onPromptChange?: (prompt: string) => void;
@@ -46,19 +48,24 @@ interface InputPromptNodeData {
   status?: 'active' | 'idle' | 'error';
   [key: string]: any;
 }
+
 type FlowNodeData = AgentNodeData | InputPromptNodeData;
+
 export interface FlowViewHandle {
   runFlow: () => void;
   saveFlow: () => void;
   showSettings: () => void;
   showCode: () => void;
 }
+
 interface FlowViewProps {
   masterUserPrompt?: string;
 }
+
 const LOCALSTORAGE_NODES_KEY = "ai_flow_nodes";
 const LOCALSTORAGE_EDGES_KEY = "ai_flow_edges";
 const LOCALSTORAGE_OUTPUTS_KEY = "ai_flow_last_outputs";
+
 export const FlowView = forwardRef<FlowViewHandle, FlowViewProps>(({
   masterUserPrompt
 }, ref) => {
@@ -68,6 +75,7 @@ export const FlowView = forwardRef<FlowViewHandle, FlowViewProps>(({
       ...node.data
     } as FlowNodeData
   }));
+
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<FlowNodeData>>(loadFromLocalStorage<Node<FlowNodeData>[]>(LOCALSTORAGE_NODES_KEY, typedInitialNodes));
   const [edges, setEdges, onEdgesChange] = useEdgesState(loadFromLocalStorage(LOCALSTORAGE_EDGES_KEY, initialEdges));
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
@@ -83,6 +91,7 @@ export const FlowView = forwardRef<FlowViewHandle, FlowViewProps>(({
     id: string;
   } | null>(null);
   const [workflowPrompt, setWorkflowPrompt] = useState<string>("");
+
   useImperativeHandle(ref, () => ({
     runFlow: () => handleExecuteFlow(),
     saveFlow: handleSaveFlow,
@@ -99,21 +108,27 @@ export const FlowView = forwardRef<FlowViewHandle, FlowViewProps>(({
       });
     }
   }));
+
   const onConnect = useCallback((params: Connection) => setEdges(eds => addEdge(params, eds)), [setEdges]);
   const onNodeClick: NodeMouseHandler<Node<FlowNodeData>> = useCallback((_, node) => {
     setSelectedNode(node.id);
   }, []);
+
   const selectedNodeData = selectedNode ? nodes.find(n => n.id === selectedNode) : null;
+
   const updateNodeData = useCallback((nodeId: string, updater: (n: Node<FlowNodeData>) => Node<FlowNodeData>) => {
     setNodes(ns => ns.map(n => n.id === nodeId ? updater(n) : n));
   }, [setNodes]);
+
   const handleDeleteEdge = useCallback((edgeId: string) => {
     setEdges(edges => edges.filter(edge => edge.id !== edgeId));
   }, [setEdges]);
+
   useEffect(() => {
     const isValid = validateBeforeExecution(nodes);
     setIsValidated(isValid);
   }, [nodes]);
+
   useEffect(() => {
     try {
       const savedOutputs = localStorage.getItem(LOCALSTORAGE_OUTPUTS_KEY);
@@ -124,9 +139,11 @@ export const FlowView = forwardRef<FlowViewHandle, FlowViewProps>(({
       console.error("Failed to load saved outputs:", error);
     }
   }, []);
+
   function handleSaveFlow() {
     setWorkflowDialogOpen(true);
   }
+
   async function doSaveWorkflow(name: string) {
     setSaving(true);
     const {
@@ -152,7 +169,9 @@ export const FlowView = forwardRef<FlowViewHandle, FlowViewProps>(({
       });
     }
   }
+
   const handleLoadWorkflow = () => setLoadDialogOpen(true);
+
   async function onLoadWorkflow(flow: any) {
     setNodes(flow.nodes);
     setEdges(flow.edges);
@@ -165,6 +184,7 @@ export const FlowView = forwardRef<FlowViewHandle, FlowViewProps>(({
       description: `Loaded "${flow.name}".`
     });
   }
+
   const handleAddNode = (typeOverride?: string) => {
     const newId = `node-${Date.now()}`;
     const last = nodes.length ? nodes[nodes.length - 1] : null;
@@ -202,6 +222,7 @@ export const FlowView = forwardRef<FlowViewHandle, FlowViewProps>(({
       description: `New agent node '${newId}' created.`
     });
   };
+
   const handleExecuteFlow = async () => {
     if (!isValidated) {
       const isValid = validateBeforeExecution(nodes);
@@ -392,6 +413,7 @@ export const FlowView = forwardRef<FlowViewHandle, FlowViewProps>(({
       setIsExecuting(false);
     }
   };
+
   const handleDeleteNode = (nodeId: string) => {
     setNodes(ns => ns.filter(n => n.id !== nodeId));
     setEdges(es => es.filter(e => e.source !== nodeId && e.target !== nodeId));
@@ -401,6 +423,7 @@ export const FlowView = forwardRef<FlowViewHandle, FlowViewProps>(({
       description: `Agent node '${nodeId}' deleted.`
     });
   };
+
   useEffect(() => {
     if (!localStorage.getItem(LOCALSTORAGE_NODES_KEY)) {
       localStorage.setItem(LOCALSTORAGE_NODES_KEY, JSON.stringify(nodes));
@@ -409,6 +432,7 @@ export const FlowView = forwardRef<FlowViewHandle, FlowViewProps>(({
       localStorage.setItem(LOCALSTORAGE_EDGES_KEY, JSON.stringify(edges));
     }
   }, []);
+
   const toggleOutputPanel = () => {
     setShowOutputPanel(!showOutputPanel);
     if (!showOutputPanel && flowOutputs.length === 0) {
@@ -422,6 +446,7 @@ export const FlowView = forwardRef<FlowViewHandle, FlowViewProps>(({
       }
     }
   };
+
   const handleAutoLayout = () => {
     const nodeWidth = 180;
     const nodeHeight = 120;
@@ -446,36 +471,68 @@ export const FlowView = forwardRef<FlowViewHandle, FlowViewProps>(({
       description: "Nodes have been arranged automatically."
     });
   };
-  return <div className="h-full w-full rounded-lg border border-gray-800 flex flex-col relative bg-slate-300">
-      <div className="flex-1 relative min-h-0 bg-slate-50">
-        <FlowGraph nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={onNodeClick} onDeleteEdge={handleDeleteEdge}>
-          <div className="absolute top-2 right-2 z-10 flex gap-2">
-            <FlowToolbar onAddNode={() => handleAddNode()} onAutoLayout={handleAutoLayout} onExecuteFlow={handleExecuteFlow} onSaveFlow={handleSaveFlow} onShowCode={() => toast({
-            title: "Code View",
-            description: "Code export not implemented yet."
-          })} onShowSettings={() => toast({
-            title: "Settings",
-            description: "Settings panel not implemented yet."
-          })} onToggleOutputPanel={toggleOutputPanel} isValidated={isValidated} isExecuting={isExecuting} showOutputPanel={showOutputPanel} flowOutputsLength={flowOutputs.length} />
-            <Button variant="outline" onClick={handleLoadWorkflow} className="text-gray-300 py-1 bg-indigo-950 hover:bg-indigo-800 px-[19px] my-[11px]">
-              Load Workflow
-            </Button>
-          </div>
+
+  return (
+    <div className="h-full w-full rounded-lg border border-gray-800 flex flex-col relative bg-gradient-to-b from-gray-900 to-gray-950">
+      <div className="flex-1 relative min-h-0">
+        <FlowGraph 
+          nodes={nodes} 
+          edges={edges} 
+          onNodesChange={onNodesChange} 
+          onEdgesChange={onEdgesChange} 
+          onConnect={onConnect} 
+          onNodeClick={onNodeClick} 
+          onDeleteEdge={handleDeleteEdge}
+        >
+          <FlowToolbar 
+            onAddNode={() => handleAddNode()} 
+            onAutoLayout={handleAutoLayout} 
+            onExecuteFlow={handleExecuteFlow} 
+            onSaveFlow={handleSaveFlow} 
+            onShowCode={() => toast({
+              title: "Code View",
+              description: "Code export not implemented yet."
+            })} 
+            onShowSettings={() => toast({
+              title: "Settings",
+              description: "Settings panel not implemented yet."
+            })} 
+            onToggleOutputPanel={toggleOutputPanel} 
+            isValidated={isValidated} 
+            isExecuting={isExecuting} 
+            showOutputPanel={showOutputPanel} 
+            flowOutputsLength={flowOutputs.length}
+          />
+          <Button 
+            variant="outline" 
+            onClick={handleLoadWorkflow} 
+            className="absolute top-2 right-2 z-10 text-gray-300 py-1 bg-indigo-950 hover:bg-indigo-800"
+          >
+            Load Workflow
+          </Button>
         </FlowGraph>
 
-        {selectedNode && selectedNodeData && <>
+        {selectedNode && selectedNodeData && (
+          <>
             <aside className="fixed top-0 right-0 z-40 h-full w-[350px] max-w-[95vw] border-l border-gray-800 bg-gray-900 shadow-lg transition-transform duration-200" style={{
-          boxShadow: ' -8px 0 28px -8px rgba(0,0,0,0.36)'
-        }} tabIndex={-1}>
-              <ConfigurationPanel node={selectedNodeData as Node<AgentNodeData>} onNodeChange={updater => updateNodeData(selectedNode, updater)} onClose={() => setSelectedNode(null)} onDeleteNode={handleDeleteNode} />
+              boxShadow: ' -8px 0 28px -8px rgba(0,0,0,0.36)'
+            }} tabIndex={-1}>
+              <ConfigurationPanel 
+                node={selectedNodeData as Node<AgentNodeData>} 
+                onNodeChange={updater => updateNodeData(selectedNode, updater)} 
+                onClose={() => setSelectedNode(null)} 
+                onDeleteNode={handleDeleteNode} 
+              />
             </aside>
             <div className="fixed inset-0 z-30 bg-black/40 md:hidden" onClick={() => setSelectedNode(null)} />
-          </>}
+          </>
+        )}
       </div>
 
       <FlowOutputPanel outputs={flowOutputs} isVisible={showOutputPanel} onClose={() => setShowOutputPanel(false)} />
 
       <SaveAsWorkflowDialog open={workflowDialogOpen} onClose={() => setWorkflowDialogOpen(false)} onSave={doSaveWorkflow} defaultName={activeWorkflow?.name || "My Workflow"} />
       <LoadWorkflowDialog open={loadDialogOpen} onClose={() => setLoadDialogOpen(false)} onLoad={onLoadWorkflow} />
-    </div>;
+    </div>
+  );
 });
