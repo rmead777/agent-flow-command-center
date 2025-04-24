@@ -1,5 +1,5 @@
 
-import { Handle, Position } from '@xyflow/react';
+import { Handle, Position, NodeResizer } from '@xyflow/react';
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect } from "react";
 import { MessageSquare } from "lucide-react";
@@ -11,7 +11,7 @@ interface InputPromptNodeProps {
     label: string;
     type: string;
     status?: 'active' | 'idle' | 'error';
-    color?: string; // Custom color
+    color?: string;
     [key: string]: any;
   };
   selected: boolean;
@@ -46,12 +46,19 @@ export function InputPromptNode({ data, selected, id }: InputPromptNodeProps) {
     <div
       className={`rounded-md p-4 shadow-md border-2 ${selected ? "ring-2 ring-white/60" : "border-sky-800"}`}
       style={{
-        background: data.color ? data.color : "#0c3052", // fallback sky-900
+        background: data.color ? data.color : "#0c3052",
         color: data.color ? "#15142b" : "#e0ecff",
-        width: 250,
+        minWidth: 250,
         minHeight: 120
       }}
     >
+      <NodeResizer 
+        minWidth={250}
+        minHeight={120}
+        isVisible={selected}
+        lineClassName="border-white"
+        handleClassName="h-3 w-3 bg-white border-2 rounded-full"
+      />
       <Handle type="target" position={Position.Top} className="!bg-gray-300" isConnectable={true} />
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">

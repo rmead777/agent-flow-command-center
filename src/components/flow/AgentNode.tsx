@@ -1,5 +1,4 @@
-
-import { Handle, Position } from '@xyflow/react';
+import { Handle, Position, NodeResizer } from '@xyflow/react';
 import { FlowNode } from '@/flow/types';
 
 interface AgentNodeProps {
@@ -21,7 +20,7 @@ interface AgentNodeProps {
       retryOnError?: boolean;
       [key: string]: any;
     };
-    color?: string; // Custom color
+    color?: string;
   };
   selected: boolean;
 }
@@ -47,8 +46,15 @@ export function AgentNode({ data, selected }: AgentNodeProps) {
   return (
     <div 
       className={`rounded-md p-4 shadow-md ${getNodeStyle()} ${selected ? 'ring-2 ring-white/50' : ''}`}
-      style={data.color ? { background: data.color, width: 180, height: 'auto' } : { width: 180, height: 'auto' }}
+      style={data.color ? { background: data.color } : undefined}
     >
+      <NodeResizer 
+        minWidth={180}
+        minHeight={100}
+        isVisible={selected}
+        lineClassName="border-white"
+        handleClassName="h-3 w-3 bg-white border-2 rounded-full"
+      />
       <Handle 
         type="target" 
         position={Position.Top} 
