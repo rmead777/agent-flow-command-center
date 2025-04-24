@@ -11,6 +11,7 @@ export class OpenAIAdapter implements ModelAdapter {
   }
 
   buildRequest(input: string, config: any) {
+    // Base request configuration
     const request: any = {
       model: this.modelName,
       messages: [
@@ -18,8 +19,15 @@ export class OpenAIAdapter implements ModelAdapter {
         { role: "user", content: input }
       ],
       temperature: config.temperature ?? 0.7,
-      max_tokens: config.maxTokens ?? 512,
     };
+
+    // For o3, o3-mini, and o4-mini models, use max_completion_tokens
+    if (["o3", "o3-mini", "o4-mini"].includes(this.modelName)) {
+      request.max_completion_tokens = config.maxTokens ?? 512;
+    } else {
+      // For other models, use max_tokens
+      request.max_tokens = config.maxTokens ?? 512;
+    }
 
     // Add web search tool if enabled and model supports it
     if (config.enableWebSearch && this.modelName === "gpt-4.1") {
