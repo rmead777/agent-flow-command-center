@@ -32,7 +32,7 @@ export const FlowToolbar: React.FC<FlowToolbarProps> = ({
       <Plus size={16} />
       Add Node
     </Button>
-    <Button onClick={onAutoLayout} title="Auto Layout" className="text-white px-2 py-1 text-xs rounded flex items-center gap-1 bg-[#bb3568]">
+    <Button onClick={onAutoLayout} title="Auto Layout" className="text-white px-2 py-1 text-xs rounded flex items-center gap-1 bg-[#bb3568] mx-[36px]">
       Auto Layout
     </Button>
     <Button className={`${isValidated ? "bg-green-600 hover:bg-green-700" : "bg-gray-600"} 
@@ -40,19 +40,19 @@ export const FlowToolbar: React.FC<FlowToolbarProps> = ({
       <Play size={16} />
       {isExecuting ? "Executing..." : "Execute Flow"}
     </Button>
-    <Button onClick={onSaveFlow} title="Save Flow" className="text-white px-2 py-1 text-xs rounded flex items-center gap-1 bg-sky-950 hover:bg-sky-800 my-0 mx-[37px]">
+    <Button onClick={onSaveFlow} title="Save Flow" className="text-white py-1 text-xs rounded flex items-center gap-1 bg-sky-950 hover:bg-sky-800 my-0 mx-[37px] px-[32px]">
       <Save size={16} />
       Save
     </Button>
-    <Button onClick={onShowCode} title="Export" className="text-white px-2 py-1 text-xs rounded flex items-center gap-1 bg-zinc-950 hover:bg-zinc-800">
+    <Button onClick={onShowCode} title="Export" className="text-white py-1 text-xs rounded flex items-center gap-1 bg-zinc-950 hover:bg-zinc-800 px-[21px]">
       <Code size={16} />
       Code
     </Button>
-    <Button onClick={onShowSettings} title="Settings" className="px-2 py-1 text-xs rounded flex items-center gap-1 bg-zinc-50 text-zinc-950">
+    <Button onClick={onShowSettings} title="Settings" className="text-xs rounded flex items-center gap-1 bg-zinc-50 text-zinc-950 px-[20px] py-[6px] mx-[30px]">
       <Settings size={16} />
       Settings
     </Button>
-    {flowOutputsLength > 0 && <Button onClick={onToggleOutputPanel} title={showOutputPanel ? "Hide Outputs" : "Show Outputs"} className="text-white px-2 py-1 text-xs rounded flex items-center gap-1 bg-red-800 hover:bg-red-700">
+    {flowOutputsLength > 0 && <Button onClick={onToggleOutputPanel} title={showOutputPanel ? "Hide Outputs" : "Show Outputs"} className="text-white py-1 text-xs rounded flex items-center gap-1 bg-red-800 hover:bg-red-700 mx-[12px] px-[26px]">
         {showOutputPanel ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
         Outputs
       </Button>}
