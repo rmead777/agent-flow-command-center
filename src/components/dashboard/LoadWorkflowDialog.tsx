@@ -25,7 +25,7 @@ export function LoadWorkflowDialog({
   return <Dialog open={open} onOpenChange={val => !val && onClose()}>
       <DialogContent className="bg-slate-900">
         <DialogHeader>
-          <DialogTitle>Load Saved Workflow</DialogTitle>
+          <DialogTitle className="text-slate-50 text-center font-bold text-lg">Load Saved Workflow</DialogTitle>
         </DialogHeader>
         {loading ? <div className="py-4 text-center text-muted">Loading...</div> : <div className="space-y-2">
             {flows.length === 0 && <div className="text-sm text-muted">No saved workflows found.</div>}
