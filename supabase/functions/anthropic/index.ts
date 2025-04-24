@@ -31,7 +31,10 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model,
-        messages,
+        messages: messages.map(msg => ({
+          role: msg.role === 'system' ? 'assistant' : msg.role,
+          content: msg.content
+        })),
         system,
         max_tokens: max_tokens || 1024,
         temperature: temperature || 0.7
@@ -61,3 +64,4 @@ serve(async (req) => {
     )
   }
 })
+
