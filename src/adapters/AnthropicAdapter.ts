@@ -23,8 +23,26 @@ export class AnthropicAdapter implements ModelAdapter {
   }
 
   parseResponse(response: any) {
+    // Ensure we have a valid response object with the expected structure
+    if (!response || !response.content || !Array.isArray(response.content)) {
+      console.error('Invalid Anthropic response structure:', response);
+      return {
+        output: "",
+        usage: {},
+        raw: response
+      };
+    }
+
+    // Extract the text content from the first content item
+    const content = response.content[0]?.text || "";
+    
+    console.log('Parsing Anthropic response:', {
+      content: content,
+      rawResponse: response
+    });
+
     return {
-      output: response.content?.[0]?.text || "",
+      output: content,
       usage: response.usage || {},
       raw: response
     };
