@@ -22,6 +22,14 @@ serve(async (req) => {
 
     console.log('Making request to Anthropic API:', { model, system })
 
+    // Filter out any messages with empty content
+    const validMessages = messages.filter(msg => msg.content && msg.content.trim() !== '')
+    
+    // Check if there are any valid messages
+    if (validMessages.length === 0) {
+      throw new Error('At least one message with non-empty content is required')
+    }
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -31,7 +39,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model,
-        messages: messages.map(msg => ({
+        messages: validMessages.map(msg => ({
           role: msg.role === 'system' ? 'assistant' : msg.role,
           content: msg.content
         })),
@@ -64,4 +72,3 @@ serve(async (req) => {
     )
   }
 })
-
