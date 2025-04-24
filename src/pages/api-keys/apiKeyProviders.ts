@@ -1,4 +1,3 @@
-
 export const PROVIDERS = [
   {
     name: 'OpenAI',
@@ -15,10 +14,9 @@ export const PROVIDERS = [
   {
     name: 'Anthropic',
     models: [
-      'claude-3.7-sonnet', 
-      'claude-3.7-opus', 
-      'claude-3.5-sonnet',
-      'claude-3.7-sonnet-reasoning'
+      'claude-3-7-sonnet-20250219',
+      'claude-3-7-opus-20250219',
+      'claude-3-5-sonnet-20250119'
     ]
   },
   {
@@ -52,7 +50,6 @@ export const PROVIDERS = [
     models: [
       'grok-3-beta',
       'grok-3-mini-beta',
-      // Include the uppercase versions for backward compatibility
       'Grok-3-beta',
       'Grok-3-mini-beta'
     ]
@@ -62,7 +59,6 @@ export const PROVIDERS = [
     models: [
       'deepseek-r1',
       'deepseek-v3-0324',
-      // Include the uppercase versions for backward compatibility
       'DeepSeek-R1',
       'DeepSeek-V3-0324'
     ]
