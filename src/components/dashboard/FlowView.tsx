@@ -474,7 +474,7 @@ export const FlowView = forwardRef<FlowViewHandle, FlowViewProps>(({
 
   return (
     <div className="h-full w-full rounded-lg border border-gray-800 flex flex-col relative bg-gradient-to-b from-gray-900 to-gray-950">
-      <div className="flex-1 relative min-h-0">
+      <div className="flex-1 relative" style={{ height: 'calc(100% - 2rem)' }}>
         <FlowGraph 
           nodes={nodes} 
           edges={edges} 
@@ -530,9 +530,10 @@ export const FlowView = forwardRef<FlowViewHandle, FlowViewProps>(({
       </div>
 
       <FlowOutputPanel outputs={flowOutputs} isVisible={showOutputPanel} onClose={() => setShowOutputPanel(false)} />
-
       <SaveAsWorkflowDialog open={workflowDialogOpen} onClose={() => setWorkflowDialogOpen(false)} onSave={doSaveWorkflow} defaultName={activeWorkflow?.name || "My Workflow"} />
       <LoadWorkflowDialog open={loadDialogOpen} onClose={() => setLoadDialogOpen(false)} onLoad={onLoadWorkflow} />
     </div>
   );
 });
+
+FlowView.displayName = "FlowView";

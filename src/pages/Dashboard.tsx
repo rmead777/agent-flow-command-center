@@ -74,7 +74,7 @@ const Dashboard = () => {
             setCurrentView(view as View);
           }} 
         />
-        <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col h-screen">
           <NotificationBar notifications={notifications} />
           <DashboardHeader
             onRunFlow={handleRunFlow}
@@ -96,9 +96,9 @@ const Dashboard = () => {
               />
             </div>
           )}
-          <main className="flex-1 overflow-auto p-4">
-            <div className={isMobile ? "h-[500px]" : "h-[calc(100vh-130px)]"}>
-              <div style={{ display: currentView === "flow" ? "block" : "none" }}>
+          <main className="flex-1 overflow-hidden p-4">
+            <div className="h-full">
+              <div style={{ height: '100%', display: currentView === "flow" ? "block" : "none" }}>
                 <FlowView
                   ref={flowViewRef}
                   masterUserPrompt={masterUserPrompt}

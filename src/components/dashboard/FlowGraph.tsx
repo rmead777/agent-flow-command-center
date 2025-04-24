@@ -145,44 +145,47 @@ export const FlowGraph: React.FC<FlowGraphProps> = ({
   }));
 
   return (
-    <ReactFlow
-      nodes={nodes}
-      edges={mappedEdges}
-      onNodesChange={onNodesChange}
-      onEdgesChange={onEdgesChange}
-      onConnect={onConnect}
-      onNodeClick={onNodeClick}
-      nodeTypes={nodeTypes}
-      edgeTypes={edgeTypes}
-      fitView={false}
-      className="bg-[#0F0F1A]"
-      defaultEdgeOptions={{ animated: true }}
-    >
-      <Controls className="bg-gray-800 text-white" />
-      <MiniMap
-        nodeColor={(node) => {
-          const nodeData = node.data as FlowNodeData;
-          if (nodeData?.color) {
-            return nodeData.color;
-          }
-          switch (nodeData.type) {
-            case "input":
-              return "#6366f1";
-            case "action":
-              return "#8b5cf6";
-            case "response":
-              return "#10b981";
-            case "inputPrompt":
-              return "#3b82f6";
-            default:
-              return "#64748b";
-          }
-        }}
-        maskColor="rgba(15, 15, 26, 0.8)"
-        className="bg-gray-800"
-      />
-      <Background color="#333" gap={16} />
-      {children}
-    </ReactFlow>
+    <div style={{ width: '100%', height: '100%' }}>
+      <ReactFlow
+        nodes={nodes}
+        edges={mappedEdges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        onNodeClick={onNodeClick}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        fitView
+        className="bg-[#0F0F1A]"
+        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+        defaultEdgeOptions={{ animated: true }}
+      >
+        <Controls className="bg-gray-800 text-white" />
+        <MiniMap
+          nodeColor={(node) => {
+            const nodeData = node.data as FlowNodeData;
+            if (nodeData?.color) {
+              return nodeData.color;
+            }
+            switch (nodeData.type) {
+              case "input":
+                return "#6366f1";
+              case "action":
+                return "#8b5cf6";
+              case "response":
+                return "#10b981";
+              case "inputPrompt":
+                return "#3b82f6";
+              default:
+                return "#64748b";
+            }
+          }}
+          maskColor="rgba(15, 15, 26, 0.8)"
+          className="bg-gray-800"
+        />
+        <Background color="#333" gap={16} />
+        {children}
+      </ReactFlow>
+    </div>
   );
 };
