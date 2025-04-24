@@ -21,9 +21,9 @@ export const adapterRegistry: Record<string, ModelAdapter> = {
   "o3-mini": new OpenAIAdapter("o3-mini"),
   "o4-mini": new OpenAIAdapter("o4-mini"),
 
-  // Anthropic Models with correct names
-  "claude-3-7-sonnet-20250219": new AnthropicAdapter("claude-3-7-sonnet-20250219"),
-  "claude-3-7-opus-20250219": new AnthropicAdapter("claude-3-7-opus-20250219"),
+  // Anthropic Models with latest IDs
+  "claude-3-7-sonnet-20250224": new AnthropicAdapter("claude-3-7-sonnet-20250224"),
+  "claude-3-7-opus-20250224": new AnthropicAdapter("claude-3-7-opus-20250224"),
   "claude-3-5-sonnet-20250119": new AnthropicAdapter("claude-3-5-sonnet-20250119"),
   
   // Google Models

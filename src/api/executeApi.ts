@@ -99,7 +99,6 @@ export async function executeAnthropic(userId: string, modelId: string, request:
       };
     }
     
-    // Make the request to Anthropic API with correct headers
     console.log(`Making request to Anthropic API for model: ${modelId}`);
     
     const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
@@ -111,9 +110,10 @@ export async function executeAnthropic(userId: string, modelId: string, request:
       },
       body: JSON.stringify({
         model: modelId,
+        system: request.system,
         messages: request.messages,
-        max_tokens: request.max_tokens || 1024,
-        temperature: request.temperature || 0.7
+        max_tokens: request.max_tokens,
+        temperature: request.temperature
       })
     });
     

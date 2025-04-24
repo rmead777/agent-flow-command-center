@@ -1,3 +1,4 @@
+
 export const PROVIDERS = [
   {
     name: 'OpenAI',
@@ -14,8 +15,8 @@ export const PROVIDERS = [
   {
     name: 'Anthropic',
     models: [
-      'claude-3-7-sonnet-20250219',
-      'claude-3-7-opus-20250219',
+      'claude-3-7-sonnet-20250224',
+      'claude-3-7-opus-20250224',
       'claude-3-5-sonnet-20250119'
     ]
   },

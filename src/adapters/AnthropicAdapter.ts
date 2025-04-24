@@ -11,11 +11,10 @@ export class AnthropicAdapter implements ModelAdapter {
   }
 
   buildRequest(input: string, config: any) {
-    // Create request object following Anthropic's API format
     return {
       model: this.modelName,
+      system: config.systemPrompt || "You are Claude, a helpful AI assistant.",
       messages: [
-        { role: "system", content: config.systemPrompt || "You are Claude, a helpful AI assistant." },
         { role: "user", content: input }
       ],
       max_tokens: config.maxTokens ?? 1024,
