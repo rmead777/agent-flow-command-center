@@ -3,10 +3,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown, ChevronRight, Download, X, Maximize2, Minimize2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Download, X, Maximize2, Minimize2, Copy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import ReactMarkdown from 'react-markdown';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
+import { toast } from '@/components/ui/use-toast';
 
 export interface FlowOutput {
   nodeId: string;
@@ -28,6 +29,30 @@ interface FlowOutputPanelProps {
   isVisible: boolean;
   onClose: () => void;
   title?: string;
+}
+
+function formatOutputForCopy(output: FlowOutput): string {
+  const parts = [];
+  
+  parts.push(`Node: ${output.nodeName}`);
+  if (output.nodeType) parts.push(`Type: ${output.nodeType}`);
+  if (output.modelId) parts.push(`Model: ${output.modelId}`);
+  if (output.executionTime) parts.push(`Execution Time: ${output.executionTime}ms`);
+  
+  if (output.input) {
+    parts.push('\nInput:');
+    parts.push(extractInputSummaries(output.input));
+  }
+  
+  parts.push('\nOutput:');
+  parts.push(extractCleanText(output.output));
+  
+  if (output.config?.systemPrompt) {
+    parts.push('\nSystem Prompt:');
+    parts.push(output.config.systemPrompt);
+  }
+  
+  return parts.join('\n');
 }
 
 function extractJustOutputText(data: any): string {
@@ -109,6 +134,22 @@ export function FlowOutputPanel({ outputs, isVisible, onClose, title = "Flow Exe
 
   const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen);
+  };
+
+  const handleCopyOutput = (output: FlowOutput) => {
+    const formattedText = formatOutputForCopy(output);
+    navigator.clipboard.writeText(formattedText).then(() => {
+      toast({
+        title: "Copied to clipboard",
+        description: "The output has been copied with formatting",
+      });
+    }).catch(err => {
+      toast({
+        title: "Failed to copy",
+        description: "Could not copy to clipboard",
+        variant: "destructive"
+      });
+    });
   };
 
   return (
@@ -208,21 +249,51 @@ export function FlowOutputPanel({ outputs, isVisible, onClose, title = "Flow Exe
                           <div className="bg-white text-gray-900 p-4 rounded-b-md space-y-4">
                             {output.input && (
                               <div>
-                                <h4 className="text-sm font-medium text-gray-600 mb-2">Input:</h4>
+                                <div className="flex justify-between items-center mb-2">
+                                  <h4 className="text-sm font-medium text-gray-600">Input:</h4>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0"
+                                    onClick={() => handleCopyOutput(output)}
+                                  >
+                                    <Copy className="h-4 w-4" />
+                                  </Button>
+                                </div>
                                 <div className="p-3 bg-gray-50 rounded-md text-sm overflow-x-auto">
                                   <MarkdownContent content={extractInputSummaries(output.input)} />
                                 </div>
                               </div>
                             )}
                             <div>
-                              <h4 className="text-sm font-medium text-gray-600 mb-2">Output:</h4>
+                              <div className="flex justify-between items-center mb-2">
+                                <h4 className="text-sm font-medium text-gray-600">Output:</h4>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                  onClick={() => handleCopyOutput(output)}
+                                >
+                                  <Copy className="h-4 w-4" />
+                                </Button>
+                              </div>
                               <div className="p-3 bg-gray-50 rounded-md text-sm overflow-x-auto">
                                 <MarkdownContent content={extractCleanText(output.output)} />
                               </div>
                             </div>
                             {systemPrompt && (
                               <div>
-                                <h4 className="text-sm font-medium text-gray-600 mb-2">System Prompt:</h4>
+                                <div className="flex justify-between items-center mb-2">
+                                  <h4 className="text-sm font-medium text-gray-600">System Prompt:</h4>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0"
+                                    onClick={() => handleCopyOutput(output)}
+                                  >
+                                    <Copy className="h-4 w-4" />
+                                  </Button>
+                                </div>
                                 <div className="p-3 bg-gray-50 rounded-md text-sm overflow-x-auto text-blue-600">
                                   <MarkdownContent content={systemPrompt} />
                                 </div>
@@ -352,21 +423,51 @@ export function FlowOutputPanel({ outputs, isVisible, onClose, title = "Flow Exe
                             <div className="bg-white text-gray-900 p-4 rounded-b-md space-y-4">
                               {output.input && (
                                 <div>
-                                  <h4 className="text-sm font-medium text-gray-600 mb-2">Input:</h4>
+                                  <div className="flex justify-between items-center mb-2">
+                                    <h4 className="text-sm font-medium text-gray-600">Input:</h4>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-8 w-8 p-0"
+                                      onClick={() => handleCopyOutput(output)}
+                                    >
+                                      <Copy className="h-4 w-4" />
+                                    </Button>
+                                  </div>
                                   <div className="p-3 bg-gray-50 rounded-md text-sm overflow-x-auto">
                                     <MarkdownContent content={extractInputSummaries(output.input)} />
                                   </div>
                                 </div>
                               )}
                               <div>
-                                <h4 className="text-sm font-medium text-gray-600 mb-2">Output:</h4>
+                                <div className="flex justify-between items-center mb-2">
+                                  <h4 className="text-sm font-medium text-gray-600">Output:</h4>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0"
+                                    onClick={() => handleCopyOutput(output)}
+                                  >
+                                    <Copy className="h-4 w-4" />
+                                  </Button>
+                                </div>
                                 <div className="p-3 bg-gray-50 rounded-md text-sm overflow-x-auto">
                                   <MarkdownContent content={extractCleanText(output.output)} />
                                 </div>
                               </div>
                               {systemPrompt && (
                                 <div>
-                                  <h4 className="text-sm font-medium text-gray-600 mb-2">System Prompt:</h4>
+                                  <div className="flex justify-between items-center mb-2">
+                                    <h4 className="text-sm font-medium text-gray-600">System Prompt:</h4>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-8 w-8 p-0"
+                                      onClick={() => handleCopyOutput(output)}
+                                    >
+                                      <Copy className="h-4 w-4" />
+                                    </Button>
+                                  </div>
                                   <div className="p-3 bg-gray-50 rounded-md text-sm overflow-x-auto text-blue-600">
                                     <MarkdownContent content={systemPrompt} />
                                   </div>
