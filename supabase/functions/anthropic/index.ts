@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
@@ -8,18 +7,11 @@ const corsHeaders = {
 
 // Valid model names in Anthropic's format
 const validModels = [
-  'claude-3-opus-20240229',
   'claude-3-sonnet-20240229'
 ];
 
 // Map our model names to Anthropic's format
 const modelNameMapping: Record<string, string> = {
-  'claude-3-7-opus-20250224': 'claude-3-opus-20240229',
-  'claude-3-7-sonnet-20250224': 'claude-3-sonnet-20240229',
-  'claude-3-5-sonnet-20250119': 'claude-3-sonnet-20240229',
-  'claude-3.7-sonnet': 'claude-3-sonnet-20240229',
-  'claude-3.7-sonnet-20250219': 'claude-3-sonnet-20240229',
-  // Add the corrected mapping for the specific model
   'claude-3-7-sonnet-20250219': 'claude-3-sonnet-20240229'
 };
 
