@@ -15,7 +15,14 @@ const validModels = [
 
 // Map our model names to Anthropic's format
 const modelNameMapping: Record<string, string> = {
-  'claude-3-7-sonnet-20250219': 'claude-3-haiku-20240307'
+  'claude-3-7-sonnet-20250219': 'claude-3-sonnet-20240229' // Updated mapping to Sonnet instead of Haiku
+};
+
+// Maximum token limits per model
+const modelTokenLimits: Record<string, number> = {
+  'claude-3-haiku-20240307': 4096,
+  'claude-3-sonnet-20240229': 16384,
+  'claude-3-opus-20240229': 32768
 };
 
 serve(async (req) => {
@@ -52,6 +59,12 @@ serve(async (req) => {
       throw new Error('At least one message with non-empty content is required')
     }
 
+    // Apply token limit based on the model
+    const modelTokenLimit = modelTokenLimits[anthropicModelName] || 4096
+    const safeMaxTokens = Math.min(max_tokens || 1024, modelTokenLimit)
+
+    console.log(`Using max_tokens: ${safeMaxTokens} (limit for ${anthropicModelName}: ${modelTokenLimit})`)
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -66,7 +79,7 @@ serve(async (req) => {
           content: msg.content
         })),
         system,
-        max_tokens: max_tokens || 1024,
+        max_tokens: safeMaxTokens,
         temperature: temperature || 0.7
       })
     })

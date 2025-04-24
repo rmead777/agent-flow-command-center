@@ -6,18 +6,34 @@ export class AnthropicAdapter implements ModelAdapter {
   providerName = "Anthropic";
   supportedFeatures = ["text"];
 
+  // Model-specific token limits
+  private static modelTokenLimits: Record<string, number> = {
+    'claude-3-7-sonnet-20250219': 16384,
+    'claude-3-opus-20240229': 32768,
+    'claude-3-sonnet-20240229': 16384,
+    'claude-3-haiku-20240307': 4096
+  };
+
   constructor(modelName: string) {
     this.modelName = modelName;
   }
 
   buildRequest(input: string, config: any) {
+    // Get the model's token limit or use a safe default
+    const modelTokenLimit = AnthropicAdapter.modelTokenLimits[this.modelName] || 4096;
+    
+    // Ensure maxTokens doesn't exceed the model's limit
+    const safeMaxTokens = Math.min(config.maxTokens ?? 1024, modelTokenLimit);
+    
+    console.log(`Building Anthropic request for ${this.modelName} with maxTokens: ${safeMaxTokens} (limit: ${modelTokenLimit})`);
+    
     return {
       model: this.modelName,
       system: config.systemPrompt || "You are Claude, a helpful AI assistant.",
       messages: [
         { role: "user", content: input }
       ],
-      max_tokens: config.maxTokens ?? 1024,
+      max_tokens: safeMaxTokens,
       temperature: config.temperature ?? 0.7
     };
   }
@@ -65,9 +81,10 @@ export class AnthropicAdapter implements ModelAdapter {
   }
 
   getDefaultConfig() {
+    // Set a safer default maxTokens value
     return {
       temperature: 0.7,
-      maxTokens: 1024,
+      maxTokens: 4096, // Reduced from 1024 to ensure it stays within limits
       systemPrompt: "You are Claude, a helpful AI assistant."
     };
   }
