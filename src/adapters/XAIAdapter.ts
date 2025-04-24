@@ -1,14 +1,25 @@
-
 import { ModelAdapter } from "./ModelAdapter";
 
 export class XAIAdapter implements ModelAdapter {
   modelName: string;
   providerName = "XAI";
   supportedFeatures = ["text"];
+  baseUrl = "https://api.x.ai/v1";
+
   constructor(modelName: string) {
-    // Normalize model name to lowercase
-    this.modelName = modelName.toLowerCase();
+    // Map model names to their API equivalents
+    const modelMap: { [key: string]: string } = {
+      "grok-3-beta": "grok-3-latest",
+      "grok-3-mini-beta": "grok-3-mini-latest",
+      // Keep legacy uppercase versions mapped
+      "Grok-3-beta": "grok-3-latest",
+      "Grok-3-mini-beta": "grok-3-mini-latest"
+    };
+
+    // Use mapped model name or the original if not found
+    this.modelName = modelMap[modelName] || modelName;
   }
+
   buildRequest(input: string, config: any) {
     return {
       model: this.modelName,
@@ -20,13 +31,20 @@ export class XAIAdapter implements ModelAdapter {
       max_tokens: config.maxTokens ?? 512,
     };
   }
+
   parseResponse(response: any) {
+    // Handle potential error responses
+    if (response.error) {
+      throw new Error(`XAI API Error: ${response.error.message || 'Unknown error'}`);
+    }
+
     return {
       output: response.choices?.[0]?.message?.content || "",
       usage: response.usage || {},
       raw: response
     };
   }
+
   validateConfig(config: any) {
     return (
       typeof config === 'object' && 
@@ -34,6 +52,7 @@ export class XAIAdapter implements ModelAdapter {
       (config.maxTokens === undefined || (typeof config.maxTokens === "number" && config.maxTokens > 0))
     );
   }
+
   getDefaultConfig() {
     return {
       temperature: 0.7,

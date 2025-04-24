@@ -322,25 +322,25 @@ export async function executeXAI(userId: string, modelId: string, request: any) 
       };
     }
     
-    // Make the request to XAI API
+    // Make the request to XAI API with the correct base URL
     console.log(`Making request to XAI API for model: ${modelId}`);
     
-    const xaiResponse = await fetch('https://api.xai.com/v1/chat/completions', {
+    const xaiResponse = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Authorization': `Bearer ${apiKey}`,
+        'Accept': 'application/json'
       },
       body: JSON.stringify({
-        model: modelId.toLowerCase(),
-        messages: request.messages,
-        max_tokens: request.max_tokens || 1024,
-        temperature: request.temperature || 0.7
+        ...request,
+        model: request.model.toLowerCase() // Ensure model name is lowercase
       })
     });
     
     if (!xaiResponse.ok) {
       const errorData = await xaiResponse.json();
+      console.error('XAI API error:', errorData);
       return {
         error: true,
         status: xaiResponse.status,
