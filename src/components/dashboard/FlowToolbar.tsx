@@ -32,7 +32,7 @@ export const FlowToolbar: React.FC<FlowToolbarProps> = ({
       <Plus size={16} />
       Add Node
     </Button>
-    <Button onClick={onAutoLayout} title="Auto Layout" className="text-white px-2 py-1 text-xs rounded flex items-center gap-1 bg-red-600 hover:bg-red-500">
+    <Button onClick={onAutoLayout} title="Auto Layout" className="text-white px-2 py-1 text-xs rounded flex items-center gap-1 bg-[#bb3568]">
       Auto Layout
     </Button>
     <Button className={`${isValidated ? "bg-green-600 hover:bg-green-700" : "bg-gray-600"} 
@@ -52,7 +52,7 @@ export const FlowToolbar: React.FC<FlowToolbarProps> = ({
       <Settings size={16} />
       Settings
     </Button>
-    {flowOutputsLength > 0 && <Button onClick={onToggleOutputPanel} title={showOutputPanel ? "Hide Outputs" : "Show Outputs"} className="text-white px-2 py-1 text-xs rounded flex items-center gap-1 bg-red-950 hover:bg-red-800">
+    {flowOutputsLength > 0 && <Button onClick={onToggleOutputPanel} title={showOutputPanel ? "Hide Outputs" : "Show Outputs"} className="text-white px-2 py-1 text-xs rounded flex items-center gap-1 bg-red-800 hover:bg-red-700">
         {showOutputPanel ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
         Outputs
       </Button>}
