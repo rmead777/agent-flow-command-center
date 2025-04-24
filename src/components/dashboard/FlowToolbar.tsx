@@ -40,19 +40,19 @@ export const FlowToolbar: React.FC<FlowToolbarProps> = ({
       <Play size={16} />
       {isExecuting ? "Executing..." : "Execute Flow"}
     </Button>
-    <Button className="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 text-xs rounded flex items-center gap-1" onClick={onSaveFlow} title="Save Flow">
+    <Button onClick={onSaveFlow} title="Save Flow" className="text-white px-2 py-1 text-xs rounded flex items-center gap-1 bg-sky-950 hover:bg-sky-800">
       <Save size={16} />
       Save
     </Button>
-    <Button className="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 text-xs rounded flex items-center gap-1" onClick={onShowCode} title="Export">
+    <Button onClick={onShowCode} title="Export" className="text-white px-2 py-1 text-xs rounded flex items-center gap-1 bg-zinc-950 hover:bg-zinc-800">
       <Code size={16} />
       Code
     </Button>
-    <Button className="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 text-xs rounded flex items-center gap-1" onClick={onShowSettings} title="Settings">
+    <Button onClick={onShowSettings} title="Settings" className="px-2 py-1 text-xs rounded flex items-center gap-1 bg-zinc-50 text-zinc-950">
       <Settings size={16} />
       Settings
     </Button>
-    {flowOutputsLength > 0 && <Button className="bg-blue-700 hover:bg-blue-600 text-white px-2 py-1 text-xs rounded flex items-center gap-1" onClick={onToggleOutputPanel} title={showOutputPanel ? "Hide Outputs" : "Show Outputs"}>
+    {flowOutputsLength > 0 && <Button onClick={onToggleOutputPanel} title={showOutputPanel ? "Hide Outputs" : "Show Outputs"} className="text-white px-2 py-1 text-xs rounded flex items-center gap-1 bg-red-950 hover:bg-red-800">
         {showOutputPanel ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
         Outputs
       </Button>}
