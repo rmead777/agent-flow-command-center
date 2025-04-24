@@ -8,21 +8,18 @@ const corsHeaders = {
 
 // Valid model names in Anthropic's format
 const validModels = [
-  'claude-3-haiku-20240307',
+  'claude-3-7-sonnet-20250219',
   'claude-3-sonnet-20240229',
-  'claude-3-opus-20240229'
+  'claude-3-opus-20240229',
+  'claude-3-haiku-20240307'
 ];
-
-// Map our model names to Anthropic's format
-const modelNameMapping: Record<string, string> = {
-  'claude-3-7-sonnet-20250219': 'claude-3-sonnet-20240229' // Updated mapping to Sonnet instead of Haiku
-};
 
 // Maximum token limits per model
 const modelTokenLimits: Record<string, number> = {
-  'claude-3-haiku-20240307': 4096,
+  'claude-3-7-sonnet-20250219': 16384,
+  'claude-3-opus-20240229': 32768,
   'claude-3-sonnet-20240229': 16384,
-  'claude-3-opus-20240229': 32768
+  'claude-3-haiku-20240307': 4096
 };
 
 serve(async (req) => {
@@ -39,15 +36,13 @@ serve(async (req) => {
       throw new Error('Anthropic API key not configured')
     }
 
-    // Map the model name to the correct Anthropic format
-    const anthropicModelName = modelNameMapping[model] || model
-    if (!validModels.includes(anthropicModelName)) {
+    // Use model name directly without mapping
+    if (!validModels.includes(model)) {
       throw new Error(`Invalid model name: ${model}. Available models are: ${validModels.join(', ')}`)
     }
 
     console.log('Making request to Anthropic API:', { 
-      originalModel: model,
-      mappedModel: anthropicModelName,
+      model,
       system 
     })
 
@@ -60,10 +55,10 @@ serve(async (req) => {
     }
 
     // Apply token limit based on the model
-    const modelTokenLimit = modelTokenLimits[anthropicModelName] || 4096
+    const modelTokenLimit = modelTokenLimits[model]
     const safeMaxTokens = Math.min(max_tokens || 1024, modelTokenLimit)
 
-    console.log(`Using max_tokens: ${safeMaxTokens} (limit for ${anthropicModelName}: ${modelTokenLimit})`)
+    console.log(`Using max_tokens: ${safeMaxTokens} (limit for ${model}: ${modelTokenLimit})`)
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -73,7 +68,7 @@ serve(async (req) => {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: anthropicModelName,
+        model: model,
         messages: validMessages.map(msg => ({
           role: msg.role === 'system' ? 'assistant' : msg.role,
           content: msg.content
@@ -107,3 +102,4 @@ serve(async (req) => {
     )
   }
 })
+
