@@ -57,11 +57,22 @@ function formatOutputForCopy(output: FlowOutput): string {
 
 function extractJustOutputText(data: any): string {
   if (!data) return '';
+  
   if (typeof data === 'string') return data;
+  
   if (typeof data === 'object' && typeof data.output === 'string') return data.output;
+  
   if (data.choices?.[0]?.message?.content) return data.choices[0].message.content;
+  
+  if (data.candidates?.[0]?.content?.parts?.[0]?.text) return data.candidates[0].content.parts[0].text;
+  
   if (typeof data.content === 'string') return data.content;
   if (typeof data.text === 'string') return data.text;
+  
+  if (data.raw) {
+    return extractJustOutputText(data.raw);
+  }
+  
   return '';
 }
 

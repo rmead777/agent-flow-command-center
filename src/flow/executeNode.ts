@@ -163,7 +163,10 @@ export async function executeNode(node: FlowNode, input: any): Promise<any> {
     console.log(`Got response from ${providerName}:`, response);
     
     // Parse the response using the adapter
-    return adapter.parseResponse(response);
+    const parsedResponse = adapter.parseResponse(response);
+
+    // Make sure we directly return the parsed response, not additional wrappers
+    return parsedResponse;
   } catch (error: any) {
     console.error(`Execution error for node ${node.id}:`, error);
     

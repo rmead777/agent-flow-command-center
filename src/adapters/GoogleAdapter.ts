@@ -27,8 +27,20 @@ export class GoogleAdapter implements ModelAdapter {
   }
 
   parseResponse(response: any) {
+    // First check if the response is already in our standardized format
+    if (response.choices && response.choices[0]?.message?.content) {
+      return {
+        output: response.choices[0].message.content,
+        usage: response.usage || {},
+        raw: response
+      };
+    }
+
+    // Then check for Gemini's native response format
+    const content = response.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    
     return {
-      output: response.candidates?.[0]?.content?.parts?.[0]?.text || "",
+      output: content,
       usage: response.usageMetadata || {},
       raw: response
     };
