@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 // Get API key from database
@@ -153,21 +154,51 @@ export async function executeGoogle(userId: string, modelId: string, request: an
     
     // Make the request to Google Gemini API
     console.log(`Making request to Google Gemini API for model: ${modelId}`);
+    console.log('Original request format:', JSON.stringify(request, null, 2));
     
     // Construct Google Gemini API URL
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
     
     // Format the request for Google Gemini API
-    const geminiRequest = {
-      contents: request.messages.map((msg: any) => ({
-        role: msg.role === 'user' ? 'USER' : msg.role === 'system' ? 'SYSTEM' : 'MODEL',
-        parts: [{ text: msg.content }]
-      })),
-      generationConfig: {
-        temperature: request.temperature || 0.7,
-        maxOutputTokens: request.max_tokens || 1024,
+    let geminiRequest;
+    
+    // Check if the format comes directly from GoogleAdapter or needs transformation
+    if (request.contents) {
+      // Format already matches what GoogleAdapter produces
+      console.log('Using direct format from GoogleAdapter');
+      geminiRequest = {
+        ...request
+      };
+    } else if (request.messages) {
+      // Convert from message format to Google Gemini format
+      console.log('Converting from message format to Google Gemini format');
+      geminiRequest = {
+        contents: request.messages.map((msg: any) => ({
+          role: msg.role === 'user' ? 'USER' : msg.role === 'system' ? 'SYSTEM' : 'MODEL',
+          parts: [{ text: msg.content }]
+        })),
+        generationConfig: {
+          temperature: request.temperature || 0.7,
+          maxOutputTokens: request.max_tokens || 1024,
+        }
+      };
+      
+      // Add system instruction if provided separately
+      if (request.system) {
+        geminiRequest.systemInstruction = {
+          parts: [{ text: request.system }]
+        };
       }
-    };
+    } else {
+      return {
+        error: true,
+        status: 400,
+        message: 'Invalid request format for Google Gemini API',
+        details: { providedFormat: Object.keys(request) }
+      };
+    }
+    
+    console.log('Sending request to Google Gemini API:', JSON.stringify(geminiRequest, null, 2));
     
     const geminiResponse = await fetch(apiUrl, {
       method: 'POST',
@@ -188,12 +219,13 @@ export async function executeGoogle(userId: string, modelId: string, request: an
     }
     
     const data = await geminiResponse.json();
+    console.log('Google Gemini API response:', JSON.stringify(data, null, 2));
     
     // Convert Google Gemini response format to standardized format
     const formattedResponse = {
       choices: [{
         message: {
-          content: data.candidates[0].content.parts[0].text,
+          content: data.candidates?.[0]?.content?.parts?.[0]?.text || '',
           role: 'assistant'
         }
       }],
