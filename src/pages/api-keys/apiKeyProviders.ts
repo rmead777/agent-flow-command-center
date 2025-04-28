@@ -7,6 +7,7 @@ export const PROVIDERS = [
       'gpt-4.1', 
       'gpt-4o-mini', 
       'gpt-4.5-preview',
+      'gpt-4.1-mini-2025-04-14',
       'o3', 
       'o3-mini', 
       'o4-mini',

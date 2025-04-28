@@ -30,7 +30,7 @@ export class OpenAIAdapter implements ModelAdapter {
     }
 
     // Add web search tool if enabled and model supports it
-    if (config.enableWebSearch && this.modelName === "gpt-4.1") {
+    if (config.enableWebSearch && ["gpt-4.1", "gpt-4.1-mini-2025-04-14"].includes(this.modelName)) {
       request.tools = [{
         type: "function",
         function: {

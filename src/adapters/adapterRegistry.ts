@@ -1,3 +1,4 @@
+
 import { ModelAdapter } from "./ModelAdapter";
 import { OpenAIAdapter } from "./OpenAIAdapter";
 import { AnthropicAdapter } from "./AnthropicAdapter";
@@ -16,6 +17,7 @@ export const adapterRegistry: Record<string, ModelAdapter> = {
   "gpt-4.1": new OpenAIAdapter("gpt-4.1"),
   "gpt-4o-mini": new OpenAIAdapter("gpt-4o-mini"),
   "gpt-4.5-preview": new OpenAIAdapter("gpt-4.5-preview"),
+  "gpt-4.1-mini-2025-04-14": new OpenAIAdapter("gpt-4.1-mini-2025-04-14"),
   // OpenAI o-models with normalized IDs
   "o3": new OpenAIAdapter("o3"),
   "o3-mini": new OpenAIAdapter("o3-mini"),

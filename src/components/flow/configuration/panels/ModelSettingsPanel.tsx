@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -27,7 +26,7 @@ export function ModelSettingsPanel({ node, onNodeChange }: BasePanelProps) {
   const streamResponse = node.data?.config?.streamResponse ?? true;
   const retryOnError = node.data?.config?.retryOnError ?? true;
 
-  const showWebSearchOption = tempProvider === "OpenAI" && selectedModel === "gpt-4.1";
+  const showWebSearchOption = tempProvider === "OpenAI" && (selectedModel === "gpt-4.1" || selectedModel === "gpt-4.1-mini-2025-04-14");
   const enableWebSearch = node.data?.config?.enableWebSearch ?? false;
 
   useEffect(() => {
