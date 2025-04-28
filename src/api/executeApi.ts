@@ -507,51 +507,34 @@ export async function executeTogether(userId: string, modelId: string, request: 
       };
     }
     
-    // Determine the correct endpoint based on the model
-    let endpoint;
-    if (modelId === 'llama-4-scout-instruct') {
-      endpoint = 'https://api.together.xyz/v1/chat/llama-4-scout-instruct';
-    } else if (modelId === 'llama-4-maverick-instruct') {
-      endpoint = 'https://api.together.xyz/v1/chat/llama-4-maverick-instruct';
-    } else {
-      // Default endpoint if model ID doesn't match specific models
-      endpoint = `https://api.together.xyz/v1/chat/${modelId}`;
-    }
+    // Use Supabase edge functions to avoid CORS issues
+    console.log(`Making request to Together AI via edge function for model: ${modelId}`);
     
-    // Make the request to Together AI API
-    console.log(`Making request to Together AI API for model: ${modelId}`);
-    
-    const togetherResponse = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
+    const { data, error } = await supabase.functions.invoke('together', {
+      body: {
+        model: modelId,
         messages: request.messages,
         temperature: request.temperature || 0.2,
         top_p: request.top_p || 0.9,
         max_tokens: request.max_tokens || request.maxTokens || 2048
-      })
+      }
     });
-    
-    if (!togetherResponse.ok) {
-      const errorData = await togetherResponse.json();
+
+    if (error) {
+      console.error('Edge function error:', error);
       return {
         error: true,
-        status: togetherResponse.status,
-        message: `Together AI API error: ${errorData.error?.message || 'Unknown error'}`,
-        details: errorData
+        status: error.status || 500,
+        message: `Edge function error: ${error.message || 'Unknown error'}`,
+        details: error
       };
     }
-    
-    const data = await togetherResponse.json();
     
     // Format the response to match our standard format
     return {
       choices: [{
         message: {
-          content: data.choices[0].message.content,
+          content: data.content,
           role: 'assistant'
         }
       }],
