@@ -26,12 +26,14 @@ export const adapterRegistry: Record<string, ModelAdapter> = {
   // Anthropic Models with latest IDs
   "claude-3-7-sonnet-20250219": new AnthropicAdapter("claude-3-7-sonnet-20250219"),
 
-  // Google Models
-  "gemini-2.5-flash": new GoogleAdapter("gemini-2.5-flash"),
-  "gemini-2.5-pro": new GoogleAdapter("gemini-2.5-pro"),
-  "gemini-1.5-flash": new GoogleAdapter("gemini-1.5-flash"),
+  // Google Gemini Models with correct model names
   "gemini-2.5-flash-preview-04-17": new GoogleAdapter("gemini-2.5-flash-preview-04-17"),
-  "gemini-2.5-pro-preview": new GoogleAdapter("gemini-2.5-pro-preview"),
+  "gemini-2.5-pro-preview-03-25": new GoogleAdapter("gemini-2.5-pro-preview-03-25"),
+  "gemini-2.0-flash": new GoogleAdapter("gemini-2.0-flash"),
+  "gemini-2.0-flash-lite": new GoogleAdapter("gemini-2.0-flash-lite"),
+  "gemini-1.5-flash": new GoogleAdapter("gemini-1.5-flash"),
+  "gemini-1.5-flash-8b": new GoogleAdapter("gemini-1.5-flash-8b"),
+  "gemini-1.5-pro": new GoogleAdapter("gemini-1.5-pro"),
   
   // Mistral Models
   "mistral-large": new MistralAdapter("mistral-large"),

@@ -6,7 +6,7 @@ export class GoogleAdapter implements ModelAdapter {
   providerName = "Google Gemini";
   supportedFeatures = ["text", "images"];
 
-  constructor(modelName = "gemini-2.5-pro") {
+  constructor(modelName = "gemini-1.5-pro") {
     this.modelName = modelName;
   }
 
