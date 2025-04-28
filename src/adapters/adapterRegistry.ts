@@ -1,4 +1,3 @@
-
 import { ModelAdapter } from "./ModelAdapter";
 import { OpenAIAdapter } from "./OpenAIAdapter";
 import { AnthropicAdapter } from "./AnthropicAdapter";
@@ -9,6 +8,7 @@ import { XAIAdapter } from "./XAIAdapter";
 import { DeepSeekAdapter } from "./DeepSeekAdapter";
 import { MockAdapter } from "./MockAdapter";
 import { PerplexityAdapter } from "./PerplexityAdapter";
+import { TogetherAdapter } from "./TogetherAdapter";
 
 // Register all provider models
 export const adapterRegistry: Record<string, ModelAdapter> = {
@@ -65,6 +65,10 @@ export const adapterRegistry: Record<string, ModelAdapter> = {
   // Perplexity Models
   "sonar-pro": new PerplexityAdapter("sonar-pro"),
   "sonar-deep-research": new PerplexityAdapter("sonar-deep-research"),
+  
+  // Together AI Models
+  "llama-4-maverick-instruct": new TogetherAdapter("llama-4-maverick-instruct"),
+  "llama-4-scout-instruct": new TogetherAdapter("llama-4-scout-instruct"),
 };
 
 // Utility function to get all available models by provider

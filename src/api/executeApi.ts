@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 // Get API key from database
@@ -495,6 +494,75 @@ export async function executePerplexity(userId: string, modelId: string, request
   }
 }
 
+// Execute Together AI request
+export async function executeTogether(userId: string, modelId: string, request: any) {
+  try {
+    // Get API key from database
+    const apiKey = await getApiKey(userId, 'Together AI', modelId);
+    if (!apiKey) {
+      return { 
+        error: true, 
+        status: 404,
+        message: `No API key found for Together AI model: ${modelId}. Please add your API key in the API Keys page.` 
+      };
+    }
+    
+    // Determine the correct endpoint based on the model
+    let endpoint;
+    if (modelId === 'llama-4-scout-instruct') {
+      endpoint = 'https://api.together.xyz/v1/chat/llama-4-scout-instruct';
+    } else if (modelId === 'llama-4-maverick-instruct') {
+      endpoint = 'https://api.together.xyz/v1/chat/llama-4-maverick-instruct';
+    } else {
+      // Default endpoint if model ID doesn't match specific models
+      endpoint = `https://api.together.xyz/v1/chat/${modelId}`;
+    }
+    
+    // Make the request to Together AI API
+    console.log(`Making request to Together AI API for model: ${modelId}`);
+    
+    const togetherResponse = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        messages: request.messages,
+        temperature: request.temperature || 0.2,
+        top_p: request.top_p || 0.9,
+        max_tokens: request.max_tokens || request.maxTokens || 2048
+      })
+    });
+    
+    if (!togetherResponse.ok) {
+      const errorData = await togetherResponse.json();
+      return {
+        error: true,
+        status: togetherResponse.status,
+        message: `Together AI API error: ${errorData.error?.message || 'Unknown error'}`,
+        details: errorData
+      };
+    }
+    
+    const data = await togetherResponse.json();
+    
+    // Format the response to match our standard format
+    return {
+      choices: [{
+        message: {
+          content: data.choices[0].message.content,
+          role: 'assistant'
+        }
+      }],
+      usage: data.usage || {},
+      raw: data
+    };
+  } catch (error) {
+    return handleApiError(error);
+  }
+}
+
 // Unified execute function
 export async function executeModel(providerName: string, modelId: string, request: any) {
   // Get current user session
@@ -528,6 +596,8 @@ export async function executeModel(providerName: string, modelId: string, reques
       return executeDeepSeek(userId, modelId, request);
     case 'perplexity':
       return executePerplexity(userId, modelId, request);
+    case 'together ai':
+      return executeTogether(userId, modelId, request);
     default:
       return {
         error: true,

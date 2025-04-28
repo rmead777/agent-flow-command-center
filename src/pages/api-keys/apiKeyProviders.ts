@@ -1,4 +1,3 @@
-
 export const PROVIDERS = [
   {
     name: 'OpenAI',
@@ -79,6 +78,13 @@ export const PROVIDERS = [
     models: [
       'sonar-pro',
       'sonar-deep-research'
+    ]
+  },
+  {
+    name: 'Together AI',
+    models: [
+      'llama-4-maverick-instruct',
+      'llama-4-scout-instruct'
     ]
   },
 ];
