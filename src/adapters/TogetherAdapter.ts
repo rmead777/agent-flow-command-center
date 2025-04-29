@@ -5,7 +5,6 @@ export class TogetherAdapter implements ModelAdapter {
   modelName: string;
   providerName = "Together AI";
   supportedFeatures = ["text"];
-  baseUrl = "https://api.together.xyz/v1";
 
   constructor(modelName: string) {
     this.modelName = modelName;
@@ -24,7 +23,21 @@ export class TogetherAdapter implements ModelAdapter {
   }
 
   parseResponse(response: any) {
-    // First check if response is already in our standardized format
+    // Handle potential error responses
+    if (response.error) {
+      throw new Error(`Together API Error: ${response.error.message || 'Unknown error'}`);
+    }
+
+    // Check if response is already in our standardized format
+    if (response.content) {
+      return {
+        output: response.content,
+        usage: response.usage || {},
+        raw: response.raw || response
+      };
+    }
+
+    // Handle the raw API response format
     if (response.choices && response.choices[0]?.message?.content) {
       return {
         output: response.choices[0].message.content,
@@ -33,14 +46,10 @@ export class TogetherAdapter implements ModelAdapter {
       };
     }
 
-    // Handle potential error responses
-    if (response.error) {
-      throw new Error(`Together API Error: ${response.error.message || 'Unknown error'}`);
-    }
-
+    // Fallback for unexpected response format
     return {
-      output: response.choices?.[0]?.message?.content || "",
-      usage: response.usage || {},
+      output: typeof response === 'string' ? response : JSON.stringify(response),
+      usage: {},
       raw: response
     };
   }

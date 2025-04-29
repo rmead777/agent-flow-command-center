@@ -17,9 +17,6 @@ serve(async (req) => {
   }
 
   try {
-    // Get the request body
-    const { model, messages, temperature = 0.2, top_p = 0.9, max_tokens = 2048 } = await req.json() as TogetherRequest;
-    
     // Get the API key from environment variables (set in Supabase)
     const apiKey = Deno.env.get("TOGETHER_API_KEY");
     if (!apiKey) {
@@ -28,16 +25,33 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Get the request body
+    let requestData;
+    try {
+      requestData = await req.json();
+    } catch (error) {
+      console.error("Error parsing request body:", error);
+      return new Response(
+        JSON.stringify({ error: "Invalid request body" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    const { model, messages, temperature = 0.2, top_p = 0.9, max_tokens = 2048 } = requestData as TogetherRequest;
+    console.log(`Processing request for model: ${model}`);
+    
+    // Validate required fields
+    if (!model || !messages || !Array.isArray(messages)) {
+      return new Response(
+        JSON.stringify({ error: "Missing required fields: model and messages array" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     
     // Determine the correct endpoint based on the model
-    let endpoint;
-    if (model === 'llama-4-scout-instruct') {
-      endpoint = 'https://api.together.xyz/v1/chat/llama-4-scout-instruct';
-    } else if (model === 'llama-4-maverick-instruct') {
-      endpoint = 'https://api.together.xyz/v1/chat/llama-4-maverick-instruct';
-    } else {
-      endpoint = `https://api.together.xyz/v1/chat/${model}`;
-    }
+    const endpoint = `https://api.together.xyz/v1/chat/completions`;
+    console.log(`Using endpoint: ${endpoint}`);
     
     // Make request to Together AI API
     const response = await fetch(endpoint, {
@@ -47,6 +61,7 @@ serve(async (req) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
+        model: model,
         messages,
         temperature,
         top_p,
@@ -54,19 +69,33 @@ serve(async (req) => {
       })
     });
     
+    console.log(`API response status: ${response.status}`);
+    
     // Parse the response
-    const data = await response.json();
+    const responseData = await response.json();
     
     if (!response.ok) {
-      throw new Error(data.error?.message || 'Unknown API error');
+      console.error("Error from Together API:", responseData);
+      return new Response(
+        JSON.stringify({ 
+          error: responseData.error?.message || 'Unknown API error',
+          details: responseData 
+        }),
+        { 
+          status: response.status, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
     }
     
     // Transform the response to our standard format
     const result = {
-      content: data.choices[0].message.content,
-      usage: data.usage || {},
-      raw: data
+      content: responseData.choices?.[0]?.message?.content || "",
+      usage: responseData.usage || {},
+      raw: responseData
     };
+    
+    console.log("Successfully processed response");
     
     // Return the response
     return new Response(
@@ -75,9 +104,10 @@ serve(async (req) => {
     );
     
   } catch (error) {
-    // Return error response
+    // Log and return error response
+    console.error("Edge function error:", error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Unknown error' }),
+      JSON.stringify({ error: error.message || 'Unknown error', stack: error.stack }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
