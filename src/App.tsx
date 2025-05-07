@@ -9,7 +9,7 @@ import NotFound from "./pages/NotFound";
 import NotesPage from "./pages/NotesPage";
 import APIKeysPage from "./pages/APIKeysPage";
 import AuthPage from "./pages/AuthPage";
-import "@xyflow/react/dist/style.css"; // Add missing CSS import
+import "@xyflow/react/dist/style.css";
 
 const queryClient = new QueryClient();
 
