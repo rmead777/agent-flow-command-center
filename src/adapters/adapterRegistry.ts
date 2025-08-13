@@ -33,6 +33,8 @@ export const adapterRegistry: Record<string, ModelAdapter> = {
   "claude-opus-4-20250514": new AnthropicAdapter("claude-opus-4-20250514"),
   "claude-opus-4-1-20250805": new AnthropicAdapter("claude-opus-4-1-20250805"),
   "claude-sonnet-4-20250514": new AnthropicAdapter("claude-sonnet-4-20250514"),
+  // Backward compatibility aliases
+  "claude-3.7-sonnet": new AnthropicAdapter("claude-3-7-sonnet-20250219"),
 
   // Google Gemini Models with correct model names
   "gemini-2.5-flash-preview-04-17": new GoogleAdapter("gemini-2.5-flash-preview-04-17"),

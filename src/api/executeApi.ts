@@ -6,24 +6,42 @@ export async function getApiKey(userId: string, provider: string, model: string)
     console.log(`Fetching API key for user ${userId}, provider ${provider}, model ${model}`);
     
     // Query the api_keys table
-    const { data, error } = await supabase
+    // Try exact match: provider + model
+    const { data: exact, error: exactError } = await supabase
       .from('api_keys')
       .select('api_key')
       .eq('user_id', userId)
       .eq('provider', provider)
-      .single();
-    
-    if (error) {
-      console.error('Error fetching API key:', error);
+      .eq('model', model)
+      .maybeSingle();
+
+    if (exactError) {
+      console.error('Error fetching API key (exact):', exactError);
+    }
+
+    if (exact?.api_key) {
+      return exact.api_key;
+    }
+
+    // Fallback: any key for the provider (pick the first)
+    const { data: anyKey, error: fallbackError } = await supabase
+      .from('api_keys')
+      .select('api_key')
+      .eq('user_id', userId)
+      .eq('provider', provider)
+      .limit(1);
+
+    if (fallbackError) {
+      console.error('Error fetching provider API key (fallback):', fallbackError);
       return null;
     }
-    
-    if (!data) {
-      console.log('No API key found');
-      return null;
+
+    if (Array.isArray(anyKey) && anyKey.length > 0) {
+      return anyKey[0].api_key;
     }
-    
-    return data.api_key;
+
+    console.log('No API key found for provider/model');
+    return null;
   } catch (error) {
     console.error('Unexpected error fetching API key:', error);
     return null;
