@@ -11,9 +11,16 @@ export class XAIAdapter implements ModelAdapter {
     const modelMap: { [key: string]: string } = {
       "grok-3-beta": "grok-3-latest",
       "grok-3-mini-beta": "grok-3-mini-latest",
+      // Grok 4 family
+      "grok-4": "grok-4-latest",
+      "grok-4-latest": "grok-4-latest",
+      "grok-4-0709": "grok-4-0709",
       // Keep legacy uppercase versions mapped
       "Grok-3-beta": "grok-3-latest",
-      "Grok-3-mini-beta": "grok-3-mini-latest"
+      "Grok-3-mini-beta": "grok-3-mini-latest",
+      "Grok-4": "grok-4-latest",
+      "Grok-4-latest": "grok-4-latest",
+      "Grok-4-0709": "grok-4-0709"
     };
 
     // Use mapped model name or the original if not found

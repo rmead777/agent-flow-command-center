@@ -18,6 +18,11 @@ export const adapterRegistry: Record<string, ModelAdapter> = {
   "gpt-4o-mini": new OpenAIAdapter("gpt-4o-mini"),
   "gpt-4.5-preview": new OpenAIAdapter("gpt-4.5-preview"),
   "gpt-4.1-mini-2025-04-14": new OpenAIAdapter("gpt-4.1-mini-2025-04-14"),
+  // OpenAI dated and next-gen models
+  "gpt-4o-2024-08-06": new OpenAIAdapter("gpt-4o-2024-08-06"),
+  "gpt-4.1-2025-04-14": new OpenAIAdapter("gpt-4.1-2025-04-14"),
+  "gpt-5-2025-08-07": new OpenAIAdapter("gpt-5-2025-08-07"),
+  "gpt-5-mini-2025-08-07": new OpenAIAdapter("gpt-5-mini-2025-08-07"),
   // OpenAI o-models with normalized IDs
   "o3": new OpenAIAdapter("o3"),
   "o3-mini": new OpenAIAdapter("o3-mini"),
@@ -25,6 +30,9 @@ export const adapterRegistry: Record<string, ModelAdapter> = {
 
   // Anthropic Models with latest IDs
   "claude-3-7-sonnet-20250219": new AnthropicAdapter("claude-3-7-sonnet-20250219"),
+  "claude-opus-4-20250514": new AnthropicAdapter("claude-opus-4-20250514"),
+  "claude-opus-4-1-20250805": new AnthropicAdapter("claude-opus-4-1-20250805"),
+  "claude-sonnet-4-20250514": new AnthropicAdapter("claude-sonnet-4-20250514"),
 
   // Google Gemini Models with correct model names
   "gemini-2.5-flash-preview-04-17": new GoogleAdapter("gemini-2.5-flash-preview-04-17"),
@@ -34,6 +42,7 @@ export const adapterRegistry: Record<string, ModelAdapter> = {
   "gemini-1.5-flash": new GoogleAdapter("gemini-1.5-flash"),
   "gemini-1.5-flash-8b": new GoogleAdapter("gemini-1.5-flash-8b"),
   "gemini-1.5-pro": new GoogleAdapter("gemini-1.5-pro"),
+  "gemini-2.5-pro": new GoogleAdapter("gemini-2.5-pro"),
   
   // Mistral Models
   "mistral-large": new MistralAdapter("mistral-large"),
@@ -51,6 +60,10 @@ export const adapterRegistry: Record<string, ModelAdapter> = {
   // Keep legacy uppercase versions for backward compatibility
   "Grok-3-beta": new XAIAdapter("grok-3-beta"),
   "Grok-3-mini-beta": new XAIAdapter("grok-3-mini-beta"),
+  // XAI Grok 4 family
+  "grok-4": new XAIAdapter("grok-4"),
+  "grok-4-0709": new XAIAdapter("grok-4-0709"),
+  "grok-4-latest": new XAIAdapter("grok-4-latest"),
 
   // DeepSeek Models normalized
   "deepseek-r1": new DeepSeekAdapter("deepseek-r1"),

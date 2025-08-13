@@ -11,6 +11,11 @@ export const PROVIDERS = [
       'o3', 
       'o3-mini', 
       'o4-mini',
+      // Newly added
+      'gpt-4o-2024-08-06',
+      'gpt-4.1-2025-04-14',
+      'gpt-5-2025-08-07',
+      'gpt-5-mini-2025-08-07',
     ]
   },
   {
@@ -19,7 +24,11 @@ export const PROVIDERS = [
       'claude-3-7-sonnet-20250219',
       'claude-3-sonnet-20240229',
       'claude-3-haiku-20240307',
-      'claude-3-opus-20240229'
+      'claude-3-opus-20240229',
+      // Newly added
+      'claude-opus-4-20250514',
+      'claude-opus-4-1-20250805',
+      'claude-sonnet-4-20250514',
     ]
   },
   {
@@ -31,7 +40,9 @@ export const PROVIDERS = [
       'gemini-2.0-flash-lite',
       'gemini-1.5-flash',
       'gemini-1.5-flash-8b',
-      'gemini-1.5-pro'
+      'gemini-1.5-pro',
+      // Newly added
+      'gemini-2.5-pro',
     ]
   },
   {
@@ -56,7 +67,11 @@ export const PROVIDERS = [
       'grok-3-beta',
       'grok-3-mini-beta',
       'Grok-3-beta',
-      'Grok-3-mini-beta'
+      'Grok-3-mini-beta',
+      // Newly added
+      'grok-4',
+      'grok-4-0709',
+      'grok-4-latest',
     ]
   },
   {
