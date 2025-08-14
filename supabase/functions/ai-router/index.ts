@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -289,6 +290,7 @@ async function getApiKey(supabase: any, userId: string, provider: string, modelI
       .maybeSingle();
 
     if (exact?.api_key) {
+      console.log('Found exact match API key');
       return exact.api_key;
     }
 
@@ -301,9 +303,11 @@ async function getApiKey(supabase: any, userId: string, provider: string, modelI
       .limit(1);
 
     if (Array.isArray(fallback) && fallback.length > 0) {
+      console.log('Found fallback API key for provider');
       return fallback[0].api_key;
     }
 
+    console.log('No API key found');
     return null;
   } catch (error) {
     console.error('Error fetching API key:', error);
@@ -418,47 +422,89 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // Model registry (simplified for edge function)
+    // Updated model registry with missing models
     const modelRegistry: Record<string, { provider: string; apiModelId?: string }> = {
-      // OpenAI
+      // OpenAI Models
       'gpt-4o': { provider: 'OpenAI' },
       'gpt-4.1': { provider: 'OpenAI' },
       'gpt-4o-mini': { provider: 'OpenAI' },
+      'gpt-4.5-preview': { provider: 'OpenAI' },
+      'gpt-4.1-mini-2025-04-14': { provider: 'OpenAI' },
+      'gpt-4o-2024-08-06': { provider: 'OpenAI' },
+      'gpt-4.1-2025-04-14': { provider: 'OpenAI' },
+      'gpt-5-2025-08-07': { provider: 'OpenAI' },
+      'gpt-5-mini-2025-08-07': { provider: 'OpenAI' },
+      'gpt-5-nano-2025-08-07': { provider: 'OpenAI' },
       'o3': { provider: 'OpenAI' },
       'o3-mini': { provider: 'OpenAI' },
       'o4-mini': { provider: 'OpenAI' },
-      // Anthropic
+      'o3-2025-04-16': { provider: 'OpenAI', apiModelId: 'o3' },
+      'o4-mini-2025-04-16': { provider: 'OpenAI', apiModelId: 'o4-mini' },
+      
+      // Anthropic Models
       'claude-3-7-sonnet-20250219': { provider: 'Anthropic' },
       'claude-opus-4-20250514': { provider: 'Anthropic' },
       'claude-opus-4-1-20250805': { provider: 'Anthropic' },
       'claude-sonnet-4-20250514': { provider: 'Anthropic' },
       'claude-3.7-sonnet': { provider: 'Anthropic', apiModelId: 'claude-3-7-sonnet-20250219' },
-      // Google
+      
+      // Google Gemini Models  
+      'gemini-2.5-flash-preview-04-17': { provider: 'Google Gemini' },
+      'gemini-2.5-pro-preview-03-25': { provider: 'Google Gemini' },
       'gemini-2.0-flash': { provider: 'Google Gemini' },
+      'gemini-2.0-flash-lite': { provider: 'Google Gemini' },
+      'gemini-1.5-flash': { provider: 'Google Gemini' },
+      'gemini-1.5-flash-8b': { provider: 'Google Gemini' },
       'gemini-1.5-pro': { provider: 'Google Gemini' },
       'gemini-2.5-pro': { provider: 'Google Gemini' },
-      // XAI
+      
+      // Mistral Models
+      'mistral-large': { provider: 'Mistral' },
+      'mistral-medium': { provider: 'Mistral' },
+      'mistral-small': { provider: 'Mistral' },
+      
+      // Cohere Models
+      'command-r': { provider: 'Cohere' },
+      'command-r-plus': { provider: 'Cohere' },
+      'command-light': { provider: 'Cohere' },
+      
+      // XAI Models
       'grok-3-beta': { provider: 'XAI', apiModelId: 'grok-3-latest' },
+      'grok-3-mini-beta': { provider: 'XAI', apiModelId: 'grok-3-mini-latest' },
       'grok-4': { provider: 'XAI', apiModelId: 'grok-4-latest' },
+      'grok-4-0709': { provider: 'XAI' },
+      'grok-4-latest': { provider: 'XAI' },
       'Grok-3-beta': { provider: 'XAI', apiModelId: 'grok-3-latest' },
-      // DeepSeek
+      'Grok-3-mini-beta': { provider: 'XAI', apiModelId: 'grok-3-mini-latest' },
+      
+      // DeepSeek Models
       'deepseek-r1': { provider: 'DeepSeek' },
       'deepseek-v3-0324': { provider: 'DeepSeek' },
       'DeepSeek-R1': { provider: 'DeepSeek', apiModelId: 'deepseek-r1' },
-      // Others
-      'mistral-large': { provider: 'Mistral' },
-      'command-r-plus': { provider: 'Cohere' },
+      'DeepSeek-V3-0324': { provider: 'DeepSeek', apiModelId: 'deepseek-v3-0324' },
+      
+      // Perplexity Models
       'sonar-pro': { provider: 'Perplexity' },
+      'sonar-deep-research': { provider: 'Perplexity' },
+      
+      // Together AI Models
+      'llama-4-maverick-instruct': { provider: 'Together AI' },
+      'llama-4-scout-instruct': { provider: 'Together AI' },
+      
+      // Mock Model
       'mock-model': { provider: 'Mock' }
     };
     
     const modelDescriptor = modelRegistry[modelId];
     if (!modelDescriptor) {
+      console.error(`Model '${modelId}' not found in registry. Available models:`, Object.keys(modelRegistry));
       throw new Error(`Model '${modelId}' not found in registry`);
     }
     
     const { provider, apiModelId } = modelDescriptor;
     const actualModelId = apiModelId || modelId;
+    
+    console.log(`Using provider: ${provider}, actualModelId: ${actualModelId}`);
     
     // Handle mock model
     if (provider === 'Mock') {
@@ -471,7 +517,7 @@ serve(async (req) => {
     // Get API key
     const apiKey = await getApiKey(supabase, userId, provider, modelId);
     if (!apiKey) {
-      throw new Error(`No API key found for provider '${provider}' and model '${modelId}'`);
+      throw new Error(`No API key found for provider '${provider}' and model '${modelId}'. Please add an API key for this provider.`);
     }
     
     // Execute model based on provider
@@ -501,6 +547,9 @@ serve(async (req) => {
       case 'Perplexity':
         response = await executePerplexity(actualModelId, standardRequest, apiKey);
         break;
+      case 'Together AI':
+        // Add Together AI execution logic
+        throw new Error('Together AI execution not implemented yet');
       default:
         throw new Error(`Unsupported provider: ${provider}`);
     }
