@@ -39,6 +39,7 @@ export interface ModelDescriptor {
     temperature: number;
     maxTokens: number;
     systemPrompt: string;
+    enableWebSearch: boolean;
     [key: string]: any;
   };
   apiModelId?: string; // For cases where registry ID differs from API ID

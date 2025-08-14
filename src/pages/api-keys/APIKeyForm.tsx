@@ -11,6 +11,7 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
+import { ModelId } from "@/adapters/modelRegistryV2";
 
 interface APIKey {
   id: string;
@@ -46,7 +47,7 @@ const APIKeyForm: React.FC<Props> = ({ loading, apiKeys, onSubmit }) => {
         console.log("Restoring saved model:", savedModel);
         // Only set the model if it belongs to the provider
         const providerModels = PROVIDERS.find(p => p.name === savedProvider)?.models || [];
-        if (providerModels.includes(savedModel)) {
+        if (providerModels.includes(savedModel as ModelId)) {
           setSelectedModel(savedModel);
         }
       }

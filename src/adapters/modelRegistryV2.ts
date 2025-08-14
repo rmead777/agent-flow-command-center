@@ -135,7 +135,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 4096,
-      systemPrompt: 'You are Claude, a helpful AI assistant.'
+      systemPrompt: 'You are Claude, a helpful AI assistant.',
+      enableWebSearch: false
     }
   },
   'claude-opus-4-20250514': {
@@ -144,7 +145,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 4096,
-      systemPrompt: 'You are Claude, a helpful AI assistant.'
+      systemPrompt: 'You are Claude, a helpful AI assistant.',
+      enableWebSearch: false
     }
   },
   'claude-opus-4-1-20250805': {
@@ -153,7 +155,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 4096,
-      systemPrompt: 'You are Claude, a helpful AI assistant.'
+      systemPrompt: 'You are Claude, a helpful AI assistant.',
+      enableWebSearch: false
     }
   },
   'claude-sonnet-4-20250514': {
@@ -162,7 +165,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 4096,
-      systemPrompt: 'You are Claude, a helpful AI assistant.'
+      systemPrompt: 'You are Claude, a helpful AI assistant.',
+      enableWebSearch: false
     }
   },
   // Backward compatibility alias
@@ -172,7 +176,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 4096,
-      systemPrompt: 'You are Claude, a helpful AI assistant.'
+      systemPrompt: 'You are Claude, a helpful AI assistant.',
+      enableWebSearch: false
     },
     apiModelId: 'claude-3-7-sonnet-20250219'
   },
@@ -184,7 +189,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: 'You are Gemini, a helpful AI assistant.'
+      systemPrompt: 'You are Gemini, a helpful AI assistant.',
+      enableWebSearch: false
     }
   },
   'gemini-2.5-pro-preview-03-25': {
@@ -193,7 +199,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: 'You are Gemini, a helpful AI assistant.'
+      systemPrompt: 'You are Gemini, a helpful AI assistant.',
+      enableWebSearch: false
     }
   },
   'gemini-2.0-flash': {
@@ -202,7 +209,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: 'You are Gemini, a helpful AI assistant.'
+      systemPrompt: 'You are Gemini, a helpful AI assistant.',
+      enableWebSearch: false
     }
   },
   'gemini-2.0-flash-lite': {
@@ -211,7 +219,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: 'You are Gemini, a helpful AI assistant.'
+      systemPrompt: 'You are Gemini, a helpful AI assistant.',
+      enableWebSearch: false
     }
   },
   'gemini-1.5-flash': {
@@ -220,7 +229,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: 'You are Gemini, a helpful AI assistant.'
+      systemPrompt: 'You are Gemini, a helpful AI assistant.',
+      enableWebSearch: false
     }
   },
   'gemini-1.5-flash-8b': {
@@ -229,7 +239,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: 'You are Gemini, a helpful AI assistant.'
+      systemPrompt: 'You are Gemini, a helpful AI assistant.',
+      enableWebSearch: false
     }
   },
   'gemini-1.5-pro': {
@@ -238,7 +249,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: 'You are Gemini, a helpful AI assistant.'
+      systemPrompt: 'You are Gemini, a helpful AI assistant.',
+      enableWebSearch: false
     }
   },
   'gemini-2.5-pro': {
@@ -247,7 +259,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: 'You are Gemini, a helpful AI assistant.'
+      systemPrompt: 'You are Gemini, a helpful AI assistant.',
+      enableWebSearch: false
     }
   },
 
@@ -258,7 +271,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: 'You are a helpful AI assistant.'
+      systemPrompt: 'You are a helpful AI assistant.',
+      enableWebSearch: false
     }
   },
   'mistral-medium': {
@@ -267,7 +281,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: 'You are a helpful AI assistant.'
+      systemPrompt: 'You are a helpful AI assistant.',
+      enableWebSearch: false
     }
   },
   'mistral-small': {
@@ -276,7 +291,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: 'You are a helpful AI assistant.'
+      systemPrompt: 'You are a helpful AI assistant.',
+      enableWebSearch: false
     }
   },
 
@@ -287,7 +303,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: 'You are a helpful AI assistant.'
+      systemPrompt: 'You are a helpful AI assistant.',
+      enableWebSearch: false
     }
   },
   'command-r-plus': {
@@ -296,7 +313,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: 'You are a helpful AI assistant.'
+      systemPrompt: 'You are a helpful AI assistant.',
+      enableWebSearch: false
     }
   },
   'command-light': {
@@ -305,7 +323,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: 'You are a helpful AI assistant.'
+      systemPrompt: 'You are a helpful AI assistant.',
+      enableWebSearch: false
     }
   },
 
@@ -316,7 +335,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: 'You are a helpful assistant.'
+      systemPrompt: 'You are a helpful assistant.',
+      enableWebSearch: false
     },
     apiModelId: 'grok-3-latest'
   },
@@ -326,7 +346,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: 'You are a helpful assistant.'
+      systemPrompt: 'You are a helpful assistant.',
+      enableWebSearch: false
     },
     apiModelId: 'grok-3-mini-latest'
   },
@@ -336,7 +357,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: 'You are a helpful assistant.'
+      systemPrompt: 'You are a helpful assistant.',
+      enableWebSearch: false
     },
     apiModelId: 'grok-4-latest'
   },
@@ -346,7 +368,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: 'You are a helpful assistant.'
+      systemPrompt: 'You are a helpful assistant.',
+      enableWebSearch: false
     }
   },
   'grok-4-latest': {
@@ -355,7 +378,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: 'You are a helpful assistant.'
+      systemPrompt: 'You are a helpful assistant.',
+      enableWebSearch: false
     }
   },
   // Legacy uppercase aliases
@@ -365,7 +389,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: 'You are a helpful assistant.'
+      systemPrompt: 'You are a helpful assistant.',
+      enableWebSearch: false
     },
     apiModelId: 'grok-3-latest'
   },
@@ -375,7 +400,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: 'You are a helpful assistant.'
+      systemPrompt: 'You are a helpful assistant.',
+      enableWebSearch: false
     },
     apiModelId: 'grok-3-mini-latest'
   },
@@ -387,7 +413,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: 'You are a helpful assistant.'
+      systemPrompt: 'You are a helpful assistant.',
+      enableWebSearch: false
     }
   },
   'deepseek-v3-0324': {
@@ -396,7 +423,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: 'You are a helpful assistant.'
+      systemPrompt: 'You are a helpful assistant.',
+      enableWebSearch: false
     }
   },
   // Legacy uppercase aliases
@@ -406,7 +434,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: 'You are a helpful assistant.'
+      systemPrompt: 'You are a helpful assistant.',
+      enableWebSearch: false
     },
     apiModelId: 'deepseek-r1'
   },
@@ -416,7 +445,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: 'You are a helpful assistant.'
+      systemPrompt: 'You are a helpful assistant.',
+      enableWebSearch: false
     },
     apiModelId: 'deepseek-v3-0324'
   },
@@ -450,7 +480,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.2,
       maxTokens: 2048,
-      systemPrompt: 'You are a helpful AI assistant.'
+      systemPrompt: 'You are a helpful AI assistant.',
+      enableWebSearch: false
     }
   },
   'llama-4-scout-instruct': {
@@ -459,7 +490,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.2,
       maxTokens: 2048,
-      systemPrompt: 'You are a helpful AI assistant.'
+      systemPrompt: 'You are a helpful AI assistant.',
+      enableWebSearch: false
     }
   },
 
@@ -470,7 +502,8 @@ export const modelRegistry = {
     defaultConfig: {
       temperature: 0.7,
       maxTokens: 512,
-      systemPrompt: 'You are a helpful assistant.'
+      systemPrompt: 'You are a helpful assistant.',
+      enableWebSearch: false
     }
   }
 } as const satisfies Record<string, ModelDescriptor>;
