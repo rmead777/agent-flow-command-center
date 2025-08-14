@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Key } from "lucide-react";
 import APIKeyForm from "./api-keys/APIKeyForm";
 import APIKeyList from "./api-keys/APIKeyList";
 import APIStatusChecker from "@/components/api-keys/APIStatusChecker";
@@ -171,14 +173,17 @@ const APIKeysPage = () => {
   if (!userId) {
     return (
       <div className="max-w-2xl mx-auto mt-10 px-4 text-center">
-        <h1 className="text-3xl font-bold mb-6">Manage API Keys</h1>
+        <div className="flex flex-col items-center gap-4 mb-8">
+          <Key className="h-12 w-12 text-muted-foreground" />
+          <h1 className="text-3xl font-bold">Manage API Keys</h1>
+        </div>
         <Card>
           <CardContent className="pt-6">
-            <p className="text-lg mb-4">
+            <p className="text-lg mb-4 text-muted-foreground">
               You need to be signed in to manage your API keys.
             </p>
             <button
-              className="bg-primary text-white rounded px-4 py-2 mt-2"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-6 py-2 font-medium transition-colors"
               onClick={() => (window.location.href = "/auth")}
             >
               Sign In
@@ -190,10 +195,13 @@ const APIKeysPage = () => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto mt-10 px-4 h-full">
+    <div className="max-w-4xl mx-auto mt-10 px-4 h-full">
       <ScrollArea className="h-full">
-        <div className="pb-6">
-          <h1 className="text-3xl font-bold mb-6">Manage API Keys</h1>
+        <div className="pb-8">
+          <div className="flex items-center gap-3 mb-8">
+            <Key className="h-8 w-8" />
+            <h1 className="text-3xl font-bold">Manage API Keys</h1>
+          </div>
 
           <APIKeyForm
             loading={loading}

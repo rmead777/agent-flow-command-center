@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, XCircle, Loader2, RefreshCw } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, RefreshCw, Activity } from "lucide-react";
 import { aiRouter } from "@/adapters/routerV2";
 import { toast } from "@/hooks/use-toast";
 
@@ -136,7 +136,7 @@ const APIStatusChecker: React.FC<Props> = ({ apiKeys }) => {
         return <Badge variant="secondary">Checking...</Badge>;
       case 'success':
         return (
-          <Badge variant="default" className="bg-green-100 text-green-800">
+          <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
             Working {status.responseTime && `(${status.responseTime}ms)`}
           </Badge>
         );
@@ -152,50 +152,56 @@ const APIStatusChecker: React.FC<Props> = ({ apiKeys }) => {
   }
 
   return (
-    <div className="space-y-4 mt-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">API Status Check</h3>
-        <Button
-          onClick={handleCheckAllAPIs}
-          disabled={isChecking}
-          variant="outline"
-          size="sm"
-          className="gap-2"
-        >
-          {isChecking ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <RefreshCw className="h-4 w-4" />
-          )}
-          {isChecking ? 'Checking...' : 'Test All APIs'}
-        </Button>
-      </div>
+    <Card className="mt-8">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Activity className="h-5 w-5" />
+            <CardTitle>API Status Check</CardTitle>
+          </div>
+          <Button
+            onClick={handleCheckAllAPIs}
+            disabled={isChecking}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            {isChecking ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            {isChecking ? 'Testing...' : 'Test All APIs'}
+          </Button>
+        </div>
+      </CardHeader>
 
       {statuses.length > 0 && (
-        <div className="space-y-2">
+        <CardContent className="space-y-3">
           {statuses.map((status, index) => (
-            <Card key={`${status.provider}-${status.model}`} className="p-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {getStatusIcon(status.status)}
-                  <div>
-                    <div className="font-medium text-sm">
-                      {status.provider} - {status.model}
-                    </div>
-                    {status.error && (
-                      <div className="text-xs text-gray-500 mt-1">
-                        {status.error}
-                      </div>
-                    )}
+            <div 
+              key={`${status.provider}-${status.model}`} 
+              className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border"
+            >
+              <div className="flex items-center gap-3">
+                {getStatusIcon(status.status)}
+                <div>
+                  <div className="font-medium text-sm">
+                    {status.provider} - {status.model}
                   </div>
+                  {status.error && (
+                    <div className="text-xs text-muted-foreground mt-1 max-w-md truncate">
+                      {status.error}
+                    </div>
+                  )}
                 </div>
-                {getStatusBadge(status)}
               </div>
-            </Card>
+              {getStatusBadge(status)}
+            </div>
           ))}
-        </div>
+        </CardContent>
       )}
-    </div>
+    </Card>
   );
 };
 
