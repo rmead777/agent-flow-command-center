@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import APIKeyForm from "./api-keys/APIKeyForm";
 import APIKeyList from "./api-keys/APIKeyList";
 import APIStatusChecker from "@/components/api-keys/APIStatusChecker";
@@ -189,22 +190,26 @@ const APIKeysPage = () => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto mt-10 px-4">
-      <h1 className="text-3xl font-bold mb-6">Manage API Keys</h1>
+    <div className="max-w-2xl mx-auto mt-10 px-4 h-full">
+      <ScrollArea className="h-full">
+        <div className="pb-6">
+          <h1 className="text-3xl font-bold mb-6">Manage API Keys</h1>
 
-      <APIKeyForm
-        loading={loading}
-        apiKeys={apiKeys}
-        onSubmit={handleAddAPIKey}
-      />
+          <APIKeyForm
+            loading={loading}
+            apiKeys={apiKeys}
+            onSubmit={handleAddAPIKey}
+          />
 
-      <APIKeyList
-        apiKeys={apiKeys}
-        loading={loading}
-        onDelete={handleDeleteAPIKey}
-      />
+          <APIKeyList
+            apiKeys={apiKeys}
+            loading={loading}
+            onDelete={handleDeleteAPIKey}
+          />
 
-      <APIStatusChecker apiKeys={apiKeys} />
+          <APIStatusChecker apiKeys={apiKeys} />
+        </div>
+      </ScrollArea>
     </div>
   );
 };
