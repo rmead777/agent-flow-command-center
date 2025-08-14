@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -12,8 +11,8 @@ const corsHeaders = {
 async function executeOpenAI(modelId: string, request: any, apiKey: string) {
   console.log(`Executing OpenAI model: ${modelId}`);
   
-  // Handle special models that use max_completion_tokens
-  const useCompletionTokens = ['o3', 'o3-mini', 'o4-mini'].includes(modelId);
+  // Handle special models that use max_completion_tokens (newer models)
+  const useCompletionTokens = ['o3', 'o3-mini', 'o4-mini', 'gpt-5', 'gpt-5-mini', 'gpt-5-nano'].includes(modelId);
   
   const payload: any = {
     model: modelId,
@@ -22,10 +21,12 @@ async function executeOpenAI(modelId: string, request: any, apiKey: string) {
   
   if (useCompletionTokens) {
     payload.max_completion_tokens = request.maxTokens || 512;
-    // These models don't support temperature
+    // These models don't support temperature - remove it entirely
+    console.log(`Using max_completion_tokens for model: ${modelId}`);
   } else {
     payload.max_tokens = request.maxTokens || 512;
     payload.temperature = request.temperature ?? 0.7;
+    console.log(`Using max_tokens and temperature for model: ${modelId}`);
   }
   
   // Add web search tool if enabled
@@ -40,6 +41,8 @@ async function executeOpenAI(modelId: string, request: any, apiKey: string) {
     }];
   }
   
+  console.log(`OpenAI request payload:`, JSON.stringify(payload, null, 2));
+  
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -51,6 +54,7 @@ async function executeOpenAI(modelId: string, request: any, apiKey: string) {
   
   if (!response.ok) {
     const errorData = await response.json();
+    console.error(`OpenAI API error for model ${modelId}:`, errorData);
     throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
   }
   
@@ -422,9 +426,9 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // Updated model registry with missing models
+    // Updated model registry with correct API model names
     const modelRegistry: Record<string, { provider: string; apiModelId?: string }> = {
-      // OpenAI Models
+      // OpenAI Models - using correct API model names
       'gpt-4o': { provider: 'OpenAI' },
       'gpt-4.1': { provider: 'OpenAI' },
       'gpt-4o-mini': { provider: 'OpenAI' },
@@ -432,9 +436,9 @@ serve(async (req) => {
       'gpt-4.1-mini-2025-04-14': { provider: 'OpenAI' },
       'gpt-4o-2024-08-06': { provider: 'OpenAI' },
       'gpt-4.1-2025-04-14': { provider: 'OpenAI' },
-      'gpt-5-2025-08-07': { provider: 'OpenAI' },
-      'gpt-5-mini-2025-08-07': { provider: 'OpenAI' },
-      'gpt-5-nano-2025-08-07': { provider: 'OpenAI' },
+      'gpt-5-2025-08-07': { provider: 'OpenAI', apiModelId: 'gpt-5' },
+      'gpt-5-mini-2025-08-07': { provider: 'OpenAI', apiModelId: 'gpt-5-mini' },
+      'gpt-5-nano-2025-08-07': { provider: 'OpenAI', apiModelId: 'gpt-5-nano' },
       'o3': { provider: 'OpenAI' },
       'o3-mini': { provider: 'OpenAI' },
       'o4-mini': { provider: 'OpenAI' },
