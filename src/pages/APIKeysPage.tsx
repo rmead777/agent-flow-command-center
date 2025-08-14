@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import APIKeyForm from "./api-keys/APIKeyForm";
 import APIKeyList from "./api-keys/APIKeyList";
+import APIStatusChecker from "@/components/api-keys/APIStatusChecker";
 
 interface APIKey {
   id: string;
@@ -203,6 +203,8 @@ const APIKeysPage = () => {
         loading={loading}
         onDelete={handleDeleteAPIKey}
       />
+
+      <APIStatusChecker apiKeys={apiKeys} />
     </div>
   );
 };
