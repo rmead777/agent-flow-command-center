@@ -195,10 +195,10 @@ const APIKeysPage = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto mt-10 px-4 h-full">
-      <ScrollArea className="h-full">
-        <div className="pb-8">
-          <div className="flex items-center gap-3 mb-8">
+    <div className="h-full flex flex-col">
+      <ScrollArea className="flex-1">
+        <div className="max-w-4xl mx-auto p-6 space-y-8">
+          <div className="flex items-center gap-3">
             <Key className="h-8 w-8" />
             <h1 className="text-3xl font-bold">Manage API Keys</h1>
           </div>
