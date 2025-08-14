@@ -1,12 +1,11 @@
+
 import { FlowNode } from "./types";
-import { getAdapter } from "../adapters/adapterRegistry";
 import { toast } from "@/components/ui/use-toast";
-import { validateFlowNodeConfig } from "../utils/modelValidation";
-import { supabase } from "@/integrations/supabase/client";
-import { executeModel } from "@/api/executeApi";
+import { aiRouter } from "../adapters/routerV2";
+import { StandardRequest } from "../adapters/types";
 
 /**
- * Calls the appropriate adapter for a given node.
+ * Execute a flow node using Router V2
  */
 export async function executeNode(node: FlowNode, input: any): Promise<any> {
   console.log(`Starting execution of node ${node.id} of type ${node.type} with input:`, input);
@@ -14,159 +13,71 @@ export async function executeNode(node: FlowNode, input: any): Promise<any> {
   // Handle InputPrompt node type
   if (node.type === "inputPrompt") {
     console.log("Executing input prompt node with prompt:", node.prompt);
-    // Return the prompt directly so it can be used by downstream nodes
     return node.prompt || "";
   }
 
   if (!node.modelId) {
     throw new Error("Node missing modelId");
   }
-  
-  // Try to get adapter with original model ID first
-  let adapter = getAdapter(node.modelId);
-  
-  // If not found, try normalized version (lowercase)
-  if (!adapter && typeof node.modelId === 'string') {
-    const normalizedModelId = node.modelId.toLowerCase();
-    adapter = getAdapter(normalizedModelId);
-    
-    if (adapter) {
-      console.log(`Found adapter using normalized model ID: ${normalizedModelId}`);
-    }
-  }
-  
-  if (!adapter) {
-    throw new Error(`Missing adapter for model: ${node.modelId}`);
-  }
-  
-  // Use default config if none provided
-  const config = node.config ?? adapter.getDefaultConfig();
-  
-  // Validate config using the validation utility
-  const validation = validateFlowNodeConfig(node.modelId, config);
-  if (!validation.isValid) {
-    const errorMessage = `Invalid configuration: ${validation.errors.join(', ')}`;
-    toast({
-      title: "Configuration Error",
-      description: errorMessage,
-      variant: "destructive"
-    });
-    throw new Error(errorMessage);
-  }
-  
+
   try {
-    console.log(`Executing node ${node.id} with input:`, input);
+    // Get model descriptor and default config
+    const modelDescriptor = aiRouter.getModelDescriptor(node.modelId);
+    const defaultConfig = aiRouter.getDefaultConfig(node.modelId);
+    
+    // Merge default config with node config
+    const config = { ...defaultConfig, ...(node.config || {}) };
+    
+    console.log(`Executing node ${node.id} with model: ${node.modelId}`);
     console.log(`Node config:`, config);
     
     // Process input - ensure it's a string
     let processedInput = input;
     
-    // Handle complex objects and array inputs
     if (Array.isArray(input)) {
-      // Safely map over array items and handle each one
       processedInput = input.map(item => {
         if (item && typeof item === 'object') {
-          // If the object has an output property, use that
           if ('output' in item && item.output !== undefined) {
             return typeof item.output === 'string' ? item.output : JSON.stringify(item.output);
           }
-          // Otherwise stringify the whole object
           return JSON.stringify(item);
         }
         return String(item || "");
       }).filter(Boolean).join("\n");
     } else if (input && typeof input === 'object') {
-      // If the object has an output property, use that
       if ('output' in input && input.output !== undefined) {
         processedInput = typeof input.output === 'string' ? input.output : JSON.stringify(input.output);
       } else {
-        // Otherwise stringify the whole object
         processedInput = JSON.stringify(input);
       }
     } else if (processedInput === undefined || processedInput === null) {
       processedInput = "";
     } else if (typeof processedInput !== 'string') {
-      // Convert to string if not already
       processedInput = String(processedInput);
     }
     
-    // Build the request using the adapter
-    const requestBody = adapter.buildRequest(processedInput, config);
+    // Build standard request
+    const standardRequest: StandardRequest = {
+      messages: [
+        { role: 'system', content: config.systemPrompt || 'You are a helpful assistant.' },
+        { role: 'user', content: processedInput }
+      ],
+      temperature: config.temperature,
+      maxTokens: config.maxTokens,
+      enableWebSearch: config.enableWebSearch || false
+    };
     
-    // For mock model, simulate a response
-    if (node.modelId === 'mock-model') {
-      console.log("Using mock model for", node.id);
-      return `[Mock response for node ${node.id}: ${processedInput}]`;
-    }
+    // Execute through Router V2
+    const response = await aiRouter.execute({
+      modelId: node.modelId,
+      input: standardRequest
+    });
     
-    // Check for user authentication before making API call
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      throw new Error("Authentication required. Please sign in to execute real model calls.");
-    }
+    console.log(`Got response from ${modelDescriptor.provider}:`, response.output);
     
-    // Execute the model using our API functions
-    const providerName = adapter.providerName;
-    console.log(`Executing ${providerName} model: ${node.modelId}`);
+    // Return the parsed response directly
+    return response;
     
-    // Add specific handling for Perplexity models
-    if (node.modelId === 'sonar-pro' || node.modelId === 'sonar-deep-research') {
-      // Define the type for Perplexity config
-      interface PerplexityConfig {
-        systemPrompt: string;
-        temperature?: number;
-        maxTokens?: number;
-        enableWebSearch?: boolean;
-        [key: string]: any;
-      }
-      
-      const defaultConfig: PerplexityConfig = {
-        systemPrompt: "You are an AI assistant providing concise and helpful information.",
-        temperature: 0.7,
-        maxTokens: 1000,
-        enableWebSearch: true
-      };
-      
-      // Merge default config with user config
-      const perplexityConfig: PerplexityConfig = {
-        ...defaultConfig,
-        ...config
-      };
-      
-      const perplexityRequestBody = adapter.buildRequest(processedInput, perplexityConfig);
-      
-      // Execute the model using our API functions
-      return await executeModel(adapter.providerName, node.modelId, perplexityRequestBody);
-    }
-    
-    const response = await executeModel(providerName, node.modelId, requestBody);
-    
-    // Handle API errors
-    if (response.error) {
-      const errorMessage = response.message || 'Unknown API error';
-      console.error(`Error from API:`, errorMessage);
-      
-      toast({
-        title: "API Error",
-        description: errorMessage,
-        variant: "destructive"
-      });
-      
-      throw new Error(errorMessage);
-    }
-    
-    // Handle potential empty response
-    if (!response) {
-      throw new Error("Empty response from API");
-    }
-    
-    console.log(`Got response from ${providerName}:`, response);
-    
-    // Parse the response using the adapter
-    const parsedResponse = adapter.parseResponse(response);
-
-    // Make sure we directly return the parsed response, not additional wrappers
-    return parsedResponse;
   } catch (error: any) {
     console.error(`Execution error for node ${node.id}:`, error);
     

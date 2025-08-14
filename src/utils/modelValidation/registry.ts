@@ -1,8 +1,7 @@
 
-import { adapterRegistry } from "../../adapters/adapterRegistry";
+import { modelRegistry } from "../../adapters/modelRegistryV2";
 import { PROVIDERS } from "../../pages/api-keys/apiKeyProviders";
 
-// 1. Registry Consistency  
 export function validateModelRegistryConsistency(): { 
   isValid: boolean;
   errors: string[];
@@ -12,7 +11,6 @@ export function validateModelRegistryConsistency(): {
   // Build map of all models from PROVIDERS (case-insensitive)
   const providerModels = new Map<string, Map<string, string>>();
   
-  // First, collect all models and their original casing
   PROVIDERS.forEach(provider => {
     if (!providerModels.has(provider.name)) {
       providerModels.set(provider.name, new Map());
@@ -24,37 +22,34 @@ export function validateModelRegistryConsistency(): {
     });
   });
   
-  // Check if all models in adapterRegistry are in PROVIDERS (case-insensitive)
-  Object.entries(adapterRegistry).forEach(([modelId, adapter]) => {
-    const providerModelsMap = providerModels.get(adapter.providerName);
+  // Check if all models in modelRegistry are in PROVIDERS
+  Object.entries(modelRegistry).forEach(([modelId, descriptor]) => {
+    const providerModelsMap = providerModels.get(descriptor.provider);
     
     if (!providerModelsMap) {
-      errors.push(`Model "${modelId}" has provider "${adapter.providerName}" which is not in the PROVIDERS list`);
+      errors.push(`Model "${modelId}" has provider "${descriptor.provider}" which is not in the PROVIDERS list`);
     } else {
-      // Check if the model exists in provider's models (case-insensitive)
       const modelLowerCase = modelId.toLowerCase();
       if (!providerModelsMap.has(modelLowerCase)) {
-        errors.push(`Model "${modelId}" from provider "${adapter.providerName}" is in adapter registry but missing from PROVIDERS list`);
+        errors.push(`Model "${modelId}" from provider "${descriptor.provider}" is in registry but missing from PROVIDERS list`);
       }
     }
   });
   
-  // Check if all models in PROVIDERS are in adapterRegistry
+  // Check if all models in PROVIDERS are in modelRegistry
   PROVIDERS.forEach(provider => {
     provider.models.forEach(model => {
-      // Try exact match first
-      if (!adapterRegistry[model]) {
-        // Try case-insensitive match
-        const matchFound = Object.keys(adapterRegistry).some(
+      if (!modelRegistry[model as keyof typeof modelRegistry]) {
+        const matchFound = Object.keys(modelRegistry).some(
           regModel => regModel.toLowerCase() === model.toLowerCase() && 
-                      adapterRegistry[regModel].providerName === provider.name
+                      modelRegistry[regModel as keyof typeof modelRegistry].provider === provider.name
         );
         
         if (!matchFound) {
-          errors.push(`Model "${model}" from provider "${provider.name}" is missing in adapter registry`);
+          errors.push(`Model "${model}" from provider "${provider.name}" is missing in registry`);
         }
-      } else if (adapterRegistry[model].providerName !== provider.name) {
-        errors.push(`Model "${model}" has inconsistent provider name: "${adapterRegistry[model].providerName}" in registry vs "${provider.name}" in providers list`);
+      } else if (modelRegistry[model as keyof typeof modelRegistry].provider !== provider.name) {
+        errors.push(`Model "${model}" has inconsistent provider name`);
       }
     });
   });

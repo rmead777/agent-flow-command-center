@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -5,7 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { BasePanelProps } from '../types/configuration.types';
 import { useConfigurationState } from '../hooks/useConfigurationState';
-import { getModelsByProvider } from '@/adapters/adapterRegistry';
+import { getModelsByProvider } from '@/adapters/modelRegistryV2';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export function ModelSettingsPanel({ node, onNodeChange }: BasePanelProps) {
